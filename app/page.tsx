@@ -173,21 +173,22 @@ ${invoice.bankAccounts.map(account =>
 
   const shareToWhatsApp = () => {
     const invoice = generateInvoice()
-    const message = `🏸 *INVOICE BADMINTON*
+    const message = `*INVOICE BADMINTON*
 
-📅 Tanggal: ${formatDateToIndonesian(invoice.date)}
-⏰ Durasi: ${invoice.duration} jam
-🏟️ Lapangan: ${invoice.court?.name} - ${invoice.court?.location}
-💰 Harga Lapangan: Rp ${invoice.courtPrice.toLocaleString()} x ${invoice.duration} jam
+Tanggal: ${formatDateToIndonesian(invoice.date)}
+Durasi: ${invoice.duration} jam
+Lapangan: ${invoice.court?.name} - ${invoice.court?.location}
+Harga Lapangan: Rp ${invoice.courtPrice.toLocaleString()} x ${invoice.duration} jam
 
-🏸 Shuttlecock: ${invoice.shuttlecock?.name}
-💰 Harga Shuttlecock: Rp ${invoice.shuttlecockPrice.toLocaleString()} x ${invoice.shuttlecockCount} biji
+Shuttlecock: ${invoice.shuttlecock?.name}
+Harga Shuttlecock: Rp ${invoice.shuttlecockPrice.toLocaleString()} x ${invoice.shuttlecockCount} biji
 
-👥 Jumlah Pemain: ${invoice.playerCount} orang
-💳 Total Biaya: Rp ${invoice.totalCost.toLocaleString()}
-💰 *Biaya per Orang: Rp ${invoice.costPerPerson.toLocaleString()}*
+Jumlah Pemain: ${invoice.playerCount} orang
+Total Biaya: Rp ${invoice.totalCost.toLocaleString()}
+*Biaya per Orang: Rp ${invoice.costPerPerson.toLocaleString()}*
 
-${invoice.bankAccounts && invoice.bankAccounts.length > 0 ? `🏦 Transfer ke:
+${invoice.bankAccounts && invoice.bankAccounts.length > 0 ? `Transfer ke:
+
 ${invoice.bankAccounts.map(account => 
 `${account.bankName} - ${account.accountNumber}
 a.n ${account.accountName}`
