@@ -1,0 +1,22 @@
+Buatkan saya aplikasi untuk perhitungan Badminton dalam 1x pertemuan dengan spesifikasi input dan output sebagai berikut:
+- Input :
+  1. Tanggal bermain, lengkap dengan jam juga
+  2. Lapangan, mulai dari nama lapangan, lokasi dan harga per jamnya berapa
+  3. Shuttlecock, mulai dari nama shuttlecock dan harga perbijinya
+  4. Jumlah orang dalam pertemuan (20 orang sehingga ada 20 card kecil)
+  5. No rekening untuk transfer PIC booking dengan detail a.n bank, norek bank dan nama bank (pastikan ada inputannya)
+  6. Untuk data lapangan dan shuttlecock disimpan ke dalam 1 file json
+  7. Untuk nama bank, lapangan menggunakan dropdown input.
+- Output : Perhitungan total (jam lapangan + total shuttlecock) dibagi dengan jumlah orang
+
+Detail tampilan :
+1. Pastikan tampilan responsive untuk desktop dan mobile
+2. Untuk jumlah orang bisa dibuat pilihan card [1] [2] [3] dst.
+3. Input lapangan, dan shuttlecock dibuat dropdown saja
+4. Untuk no rekening dibuat per rekening 1 card.
+
+Add-ons:
+1. Buatkan fitur export dan import struk / invoice (png, pdf, atau sejenisnya)
+2. Buatkan fitur share langsung ke whatsapp atau bentukan txt
+
+Buatlah dengan menggunakan framework yg compatible untuk dideploy di vercel nantinya.

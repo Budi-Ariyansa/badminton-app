@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Yonex AS-30",
+    "pricePerPiece": 25000
+  },
+  {
+    "name": "Victor Gold",
+    "pricePerPiece": 22000
+  },
+  {
+    "name": "Li-Ning A+600",
+    "pricePerPiece": 20000
+  },
+  {
+    "name": "RSL Classic Tourney",
+    "pricePerPiece": 18000
+  },
+  {
+    "name": "Yonex Mavis 350",
+    "pricePerPiece": 15000
+  }
+]
