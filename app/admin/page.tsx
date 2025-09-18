@@ -407,23 +407,21 @@ export default function AdminPage() {
               {/* Add New Bank */}
               <div className="bg-gray-50 p-4 border rounded-lg mb-4" style={{ borderColor: '#66B933' }}>
                 <h4 className="font-bold mb-2 text-gray-800">Tambah Bank Baru</h4>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Nama Bank"
-                    value={newBank}
-                    onChange={(e) => setNewBank(e.target.value)}
-                    className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                    style={{ borderColor: '#66B933' }}
-                  />
-                  <button
-                    onClick={addBank}
-                    className="px-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200"
-                    style={{ backgroundColor: '#66B933' }}
-                  >
-                    Tambah
-                  </button>
-                </div>
+                <input
+                  type="text"
+                  placeholder="Nama Bank"
+                  value={newBank}
+                  onChange={(e) => setNewBank(e.target.value)}
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent mb-3"
+                  style={{ borderColor: '#66B933' }}
+                />
+                <button
+                  onClick={addBank}
+                  className="w-full px-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200"
+                  style={{ backgroundColor: '#66B933' }}
+                >
+                  Tambah
+                </button>
               </div>
 
               {/* Banks List */}

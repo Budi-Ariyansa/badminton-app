@@ -667,7 +667,7 @@ Sampai Jumpa Lagi!`
           
           {/* Header */}
           <div className="text-center mb-6 relative z-10">
-            <div className="bg-green-500 text-black px-6 py-2 rounded-full inline-block font-black text-lg tracking-wider shadow-lg">
+            <div className="bg-green-500 text-black px-6 py-2 rounded-full inline-block font-black text-sm md:text-lg tracking-wider shadow-lg">
               🏸 PERHITUNGAN BIAYA AKHIR 🏸
             </div>
           </div>
@@ -751,7 +751,7 @@ Sampai Jumpa Lagi!`
           ) : (
             <div className="text-center text-gray-400 relative z-10">
               <div className="text-6xl mb-4">🏸</div>
-              <p className="text-lg">Lengkapi data untuk melihat perhitungan biaya akhir</p>
+              <p className="text-sm md:text-lg">Lengkapi data untuk melihat perhitungan biaya akhir</p>
             </div>
           )}
         </div>
