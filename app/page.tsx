@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Download, Share2, Upload } from 'lucide-react'
+import { Download, Share2 } from 'lucide-react'
 
 interface Court {
   name: string
@@ -34,15 +34,6 @@ export default function BadmintonCalculator() {
   const [playerCount, setPlayerCount] = useState(1)
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null)
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [showLogin, setShowLogin] = useState(false)
-  const [showAdminMenu, setShowAdminMenu] = useState(false)
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' })
-  const [editingCourt, setEditingCourt] = useState<Court | null>(null)
-  const [editingShuttlecock, setEditingShuttlecock] = useState<Shuttlecock | null>(null)
-  const [newCourt, setNewCourt] = useState<Court>({ name: '', location: '', pricePerHour: 0 })
-  const [newShuttlecock, setNewShuttlecock] = useState<Shuttlecock>({ name: '', pricePerPiece: 0 })
-  const [newBank, setNewBank] = useState('')
   const [newAccount, setNewAccount] = useState<BankAccount>({
     accountName: '',
     accountNumber: '',
@@ -96,78 +87,6 @@ export default function BadmintonCalculator() {
     return `${dayName}, ${day} ${month} ${year}`
   }
 
-  const handleLogin = () => {
-    if (loginForm.username === 'adminpbkm' && loginForm.password === 'adminpbkm1010') {
-      setIsLoggedIn(true)
-      setShowLogin(false)
-      setLoginForm({ username: '', password: '' })
-    } else {
-      alert('Username atau password salah!')
-    }
-  }
-
-  const handleLogout = () => {
-    setIsLoggedIn(false)
-    setShowAdminMenu(false)
-  }
-
-  const addCourt = () => {
-    if (newCourt.name && newCourt.location) {
-      setCourts([...courts, { ...newCourt, pricePerHour: 0 }])
-      setNewCourt({ name: '', location: '', pricePerHour: 0 })
-    }
-  }
-
-  const updateCourt = () => {
-    if (editingCourt) {
-      setCourts(courts.map(c => c.name === editingCourt.name ? editingCourt : c))
-      setEditingCourt(null)
-    }
-  }
-
-  const deleteCourt = (name: string) => {
-    setCourts(courts.filter(c => c.name !== name))
-  }
-
-  const addShuttlecock = () => {
-    if (newShuttlecock.name) {
-      setShuttlecocks([...shuttlecocks, { ...newShuttlecock, pricePerPiece: 0 }])
-      setNewShuttlecock({ name: '', pricePerPiece: 0 })
-    }
-  }
-
-  const updateShuttlecock = () => {
-    if (editingShuttlecock) {
-      setShuttlecocks(shuttlecocks.map(s => s.name === editingShuttlecock.name ? editingShuttlecock : s))
-      setEditingShuttlecock(null)
-    }
-  }
-
-  const deleteShuttlecock = (name: string) => {
-    setShuttlecocks(shuttlecocks.filter(s => s.name !== name))
-  }
-
-  const addBank = () => {
-    if (newBank && !bankOptions.includes(newBank)) {
-      setBankOptions([...bankOptions, newBank])
-      setNewBank('')
-    }
-  }
-
-  const deleteBank = (bank: string) => {
-    setBankOptions(bankOptions.filter(b => b !== bank))
-  }
-
-  const updateJsonData = (type: 'courts' | 'shuttlecocks' | 'banks', data: any) => {
-    if (type === 'courts') {
-      setCourts(data)
-    } else if (type === 'shuttlecocks') {
-      setShuttlecocks(data)
-    } else if (type === 'banks') {
-      setBankOptions(data)
-    }
-  }
-
   const addBankAccount = () => {
     if (newAccount.accountName && newAccount.accountNumber && newAccount.bankName) {
       setBankAccounts([...bankAccounts, newAccount])
@@ -203,170 +122,252 @@ export default function BadmintonCalculator() {
 
   const exportReceipt = () => {
     const invoice = generateInvoice()
-    const receipt = `
-═══════════════════════════════════════
-           🏸 STRUK BADMINTON 🏸
-═══════════════════════════════════════
-
-📅 Tanggal      : ${formatDateToIndonesian(invoice.date)}
-⏰ Durasi       : ${invoice.duration} jam
-🏟️ Lapangan     : ${invoice.court?.name}
-📍 Lokasi       : ${invoice.court?.location}
-
-───────────────────────────────────────
-                RINCIAN BIAYA
-───────────────────────────────────────
-
-🏟️ Sewa Lapangan
-   ${invoice.duration} jam × Rp ${invoice.courtPrice.toLocaleString()}
-   = Rp ${(invoice.courtPrice * invoice.duration).toLocaleString()}
-
-🏸 Shuttlecock
-   ${invoice.shuttlecockCount} biji × Rp ${invoice.shuttlecockPrice.toLocaleString()}
-   (${invoice.shuttlecock?.name})
-   = Rp ${(invoice.shuttlecockPrice * invoice.shuttlecockCount).toLocaleString()}
-
-───────────────────────────────────────
-💰 TOTAL BIAYA  : Rp ${invoice.totalCost.toLocaleString()}
-👥 JUMLAH ORANG : ${invoice.playerCount} orang
-💳 BIAYA/ORANG  : Rp ${invoice.costPerPerson.toLocaleString()}
-
-${invoice.bankAccounts && invoice.bankAccounts.length > 0 ? `───────────────────────────────────────
-              TRANSFER KE:
-───────────────────────────────────────
-${invoice.bankAccounts.map(account => 
-`🏦 Bank         : ${account.bankName}
-💳 No. Rekening : ${account.accountNumber}
-👤 Atas Nama    : ${account.accountName}`
-).join('\n\n')}` : ''}
-
-═══════════════════════════════════════
-        Terima kasih sudah bermain!
-═══════════════════════════════════════
-`
-    const blob = new Blob([receipt], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `struk-badminton-${playDate}.txt`
-    a.click()
+    
+    // Calculate dynamic height more accurately
+    const baseHeight = 400
+    const bankAccountsHeight = invoice.bankAccounts ? invoice.bankAccounts.length * 100 : 0
+    const totalHeight = baseHeight + bankAccountsHeight + 300
+    
+    // Create canvas with thermal receipt proportions
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    // Thermal receipt size (narrower)
+    canvas.width = 400
+    canvas.height = totalHeight
+    
+    // White background
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Set default text properties
+    ctx.fillStyle = '#000000'
+    ctx.textAlign = 'center'
+    
+    let y = 30
+    const lineHeight = 20
+    
+    // Header
+    ctx.font = 'bold 18px monospace'
+    ctx.fillText('================================', canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText('🏸 STRUK BADMINTON 🏸', canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText('================================', canvas.width / 2, y)
+    y += lineHeight * 2
+    
+    // Receipt details
+    ctx.font = '12px monospace'
+    ctx.textAlign = 'left'
+    
+    ctx.fillText(`Tanggal: ${formatDateToIndonesian(invoice.date)}`, 20, y)
+    y += lineHeight
+    ctx.fillText(`Durasi : ${invoice.duration} jam`, 20, y)
+    y += lineHeight
+    ctx.fillText(`Court  : ${invoice.court?.name}`, 20, y)
+    y += lineHeight
+    ctx.fillText(`Lokasi : ${invoice.court?.location}`, 20, y)
+    y += lineHeight * 2
+    
+    // Separator
+    ctx.textAlign = 'center'
+    ctx.fillText('--------------------------------', canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText('RINCIAN BIAYA', canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText('--------------------------------', canvas.width / 2, y)
+    y += lineHeight * 1.5
+    
+    // Cost breakdown
+    ctx.textAlign = 'left'
+    ctx.fillText(`Sewa Lapangan (${invoice.duration} jam)`, 20, y)
+    y += lineHeight
+    ctx.textAlign = 'right'
+    ctx.fillText(`Rp ${(invoice.courtPrice * invoice.duration).toLocaleString()}`, canvas.width - 20, y)
+    y += lineHeight * 1.5
+    
+    ctx.textAlign = 'left'
+    ctx.fillText(`Shuttlecock (${invoice.shuttlecockCount} biji)`, 20, y)
+    y += lineHeight
+    ctx.fillText(`${invoice.shuttlecock?.name}`, 20, y)
+    y += lineHeight
+    ctx.textAlign = 'right'
+    ctx.fillText(`Rp ${(invoice.shuttlecockPrice * invoice.shuttlecockCount).toLocaleString()}`, canvas.width - 20, y)
+    y += lineHeight * 2
+    
+    // Total
+    ctx.textAlign = 'center'
+    ctx.fillText('--------------------------------', canvas.width / 2, y)
+    y += lineHeight
+    
+    ctx.font = 'bold 14px monospace'
+    ctx.textAlign = 'left'
+    ctx.fillText('TOTAL BIAYA:', 20, y)
+    ctx.textAlign = 'right'
+    ctx.fillText(`Rp ${invoice.totalCost.toLocaleString()}`, canvas.width - 20, y)
+    y += lineHeight
+    
+    ctx.textAlign = 'left'
+    ctx.fillText(`JUMLAH ORANG: ${invoice.playerCount}`, 20, y)
+    y += lineHeight * 1.5
+    
+    // Cost per person highlight
+    ctx.textAlign = 'center'
+    ctx.font = 'bold 16px monospace'
+    ctx.fillText('================================', canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText(`BIAYA PER ORANG`, canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText(`Rp ${invoice.costPerPerson.toLocaleString()}`, canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText('================================', canvas.width / 2, y)
+    y += lineHeight * 2
+    
+    // Bank accounts
+    if (invoice.bankAccounts && invoice.bankAccounts.length > 0) {
+      ctx.font = '12px monospace'
+      ctx.fillText('TRANSFER KE:', canvas.width / 2, y)
+      y += lineHeight
+      ctx.fillText('--------------------------------', canvas.width / 2, y)
+      y += lineHeight * 1.5
+      
+      invoice.bankAccounts.forEach((account, index) => {
+        ctx.textAlign = 'left'
+        ctx.font = 'bold 12px monospace'
+        ctx.fillText(`${index + 1}. ${account.bankName}`, 20, y)
+        y += lineHeight
+        ctx.font = '12px monospace'
+        ctx.fillText(`No. Rek: ${account.accountNumber}`, 20, y)
+        y += lineHeight
+        ctx.fillText(`A.n: ${account.accountName}`, 20, y)
+        y += lineHeight * 2
+      })
+    }
+    
+    // Footer
+    ctx.textAlign = 'center'
+    ctx.font = '12px monospace'
+    ctx.fillText('--------------------------------', canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText('Terima Kasih Telah Bermain!', canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText('Semoga Sehat Selalu 🏸', canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText('Sampai Jumpa Lagi!', canvas.width / 2, y)
+    y += lineHeight
+    ctx.fillText('================================', canvas.width / 2, y)
+    
+    // Download as PNG
+    canvas.toBlob((blob) => {
+      if (!blob) return
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `struk-badminton-${playDate}.png`
+      a.click()
+      URL.revokeObjectURL(url)
+    }, 'image/png')
   }
 
   const shareToWhatsApp = () => {
     const invoice = generateInvoice()
-    const message = `🏸 *INVOICE BADMINTON*
+    const message = `================================
+🏸 STRUK BADMINTON 🏸
+================================
 
-📅 Tanggal: ${formatDateToIndonesian(invoice.date)}
-⏰ Durasi: ${invoice.duration} jam
-🏟 Lapangan: ${invoice.court?.name} - ${invoice.court?.location}
-💰 Harga Lapangan: Rp ${invoice.courtPrice.toLocaleString()} x ${invoice.duration} jam
-💳 Total Biaya Lapangan: Rp ${(invoice.courtPrice * invoice.duration).toLocaleString()}
+Tanggal: ${formatDateToIndonesian(invoice.date)}
+Durasi : ${invoice.duration} jam
+Court  : ${invoice.court?.name}
+Lokasi : ${invoice.court?.location}
 
-🏸 Shuttlecock: ${invoice.shuttlecock?.name}
-💰 Harga Shuttlecock: Rp ${invoice.shuttlecockPrice.toLocaleString()} x ${invoice.shuttlecockCount} biji
-💳 Total Biaya Shuttlecock: Rp ${(invoice.shuttlecockPrice * invoice.shuttlecockCount).toLocaleString()}
+--------------------------------
+RINCIAN BIAYA
+--------------------------------
 
-👥 Jumlah Pemain: ${invoice.playerCount} orang
-💰 Total Biaya: Rp ${invoice.totalCost.toLocaleString()}
-💸 *Biaya per Orang: Rp ${Math.round(invoice.costPerPerson).toLocaleString()}*
+Sewa Lapangan (${invoice.duration} jam)
+${' '.repeat(25)}Rp ${invoice.courtPrice.toLocaleString()}
 
-${invoice.bankAccounts && invoice.bankAccounts.length > 0 ? `🏦 Transfer ke:
+Shuttlecock (${invoice.shuttlecockCount} biji)
+${invoice.shuttlecock?.name}
+${' '.repeat(25)}Rp ${invoice.shuttlecockPrice.toLocaleString()}
 
-${invoice.bankAccounts.map(account => 
-`${account.bankName} - ${account.accountNumber}
-a.n ${account.accountName}`
-).join('\n\n')}` : ''}`
+--------------------------------
+
+TOTAL BIAYA:${' '.repeat(10)}Rp ${invoice.totalCost.toLocaleString()}
+JUMLAH ORANG: ${invoice.playerCount}
+
+================================
+BIAYA PER ORANG
+Rp ${Math.round(invoice.costPerPerson).toLocaleString()}
+================================
+
+${invoice.bankAccounts && invoice.bankAccounts.length > 0 ? `TRANSFER KE:
+--------------------------------
+
+${invoice.bankAccounts.map((account, index) => 
+`${index + 1}. ${account.bankName}
+No. Rek: ${account.accountNumber}
+A.n: ${account.accountName}`
+).join('\n\n')}
+
+--------------------------------` : ''}
+
+Terima Kasih Telah Bermain!
+Semoga Sehat Selalu 🏸
+Sampai Jumpa Lagi!`
 
     const encodedMessage = encodeURIComponent(message)
     window.open(`https://wa.me/?text=${encodedMessage}`, '_blank')
   }
 
-  const importInvoice = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target?.result as string)
-          setPlayDate(data.date || '')
-          setDuration(data.duration || 1)
-          setSelectedCourt(data.court)
-          setCourtPrice(data.courtPrice || 0)
-          setSelectedShuttlecock(data.shuttlecock)
-          setShuttlecockPrice(data.shuttlecockPrice || 0)
-          setShuttlecockCount(data.shuttlecockCount || 1)
-          setPlayerCount(data.playerCount || 1)
-          setSelectedAccount(data.account)
-          if (data.bankAccounts) {
-            setBankAccounts(data.bankAccounts)
-          }
-        } catch (error) {
-          alert('File tidak valid')
-        }
-      }
-      reader.readAsText(file)
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-green-200 to-yellow-200 p-4" style={{
-      backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'
-    }}>
+    <div className="min-h-screen bg-gray-100 p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-gray-300 border-4 border-gray-400 rounded-none shadow-lg mb-6 p-1" style={{
-          borderStyle: 'outset',
-          borderWidth: '3px'
-        }}>
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-3 flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-red-500 rounded-full mr-2 border border-red-700"></div>
-              <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2 border border-yellow-700"></div>
-              <div className="w-4 h-4 bg-green-500 rounded-full mr-4 border border-green-700"></div>
-              <h1 className="text-xl font-bold">🏸 Kalkulator Badminton</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              {isLoggedIn ? (
-                <>
-                  <button
-                    onClick={() => setShowAdminMenu(!showAdminMenu)}
-                    className="px-3 py-1 bg-white text-blue-800 rounded text-sm font-bold hover:bg-gray-100"
-                  >
-                    Admin
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="px-3 py-1 bg-red-500 text-white rounded text-sm font-bold hover:bg-red-600"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => setShowLogin(true)}
-                  className="px-3 py-1 bg-white text-blue-800 rounded text-sm font-bold hover:bg-gray-100"
+        <div className="bg-white rounded-xl shadow-lg mb-6">
+          <div className="text-white p-3 md:p-6 rounded-t-xl" style={{ 
+            background: 'linear-gradient(135deg, #66B933 0%, #4a9025 100%)',
+            boxShadow: '0 4px 20px rgba(102, 185, 51, 0.3)'
+          }}>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
+              {/* Logo and Title */}
+              <div className="flex items-center gap-3">
+                <img src="/images/logo.png" alt="Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
+                <div>
+                  <h1 className="text-base md:text-xl font-black tracking-wide">BADMINTON CALCULATOR</h1>
+                  <p className="text-xs md:text-sm opacity-80 font-medium">Hitung biaya bermain per orang</p>
+                </div>
+              </div>
+              
+              {/* Admin Button */}
+              <div className="flex justify-end">
+                <a
+                  href="/admin"
+                  className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-white bg-opacity-20 backdrop-blur-sm text-white rounded-lg text-xs md:text-sm font-bold hover:bg-opacity-30 transition-all duration-200"
                 >
-                  Login
-                </button>
-              )}
+                  <span className="text-xs md:text-sm">⚙️</span>
+                  <span>ADMIN</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-200 border-4 rounded-none shadow-lg p-6 mb-6" style={{
-          borderStyle: 'inset',
-          borderWidth: '2px',
-          borderColor: '#c0c0c0'
+        <div className="bg-white border rounded-lg shadow p-6 mb-6" style={{
+          borderColor: '#66B933'
         }}>
           <div className="grid md:grid-cols-2 gap-6">
             {/* Tanggal */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold mb-2 text-black">📅 Tanggal Bermain</label>
+              <label className="block text-sm font-bold mb-2 text-gray-800">📅 Tanggal Bermain</label>
               <input
                 type="date"
                 value={playDate}
                 onChange={(e) => setPlayDate(e.target.value)}
-                className="w-full p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ 
+                  borderColor: '#66B933'
+                }}
               />
               {playDate && (
                 <div className="mt-1 text-sm text-gray-600 font-medium">
@@ -383,9 +384,10 @@ a.n ${account.accountName}`
                 onChange={(e) => {
                   const court = courts.find(c => c.name === e.target.value)
                   setSelectedCourt(court || null)
+                  setCourtPrice(court?.pricePerHour || 0)
                 }}
-                className="w-full p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ borderColor: '#66B933' }}
               >
                 <option value="">Pilih lapangan...</option>
                 {courts.map((court) => (
@@ -402,12 +404,9 @@ a.n ${account.accountName}`
               <input
                 type="text"
                 value={courtPrice ? `Rp ${courtPrice.toLocaleString()}` : ''}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, '')
-                  setCourtPrice(parseInt(value) || 0)
-                }}
-                className="w-full p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
+                disabled
+                className="w-full p-3 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                style={{ borderColor: '#66B933' }}
                 placeholder="Rp 0"
               />
             </div>
@@ -420,9 +419,10 @@ a.n ${account.accountName}`
                 onChange={(e) => {
                   const shuttlecock = shuttlecocks.find(s => s.name === e.target.value)
                   setSelectedShuttlecock(shuttlecock || null)
+                  setShuttlecockPrice(shuttlecock?.pricePerPiece || 0)
                 }}
-                className="w-full p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ borderColor: '#66B933' }}
               >
                 <option value="">Pilih shuttlecock...</option>
                 {shuttlecocks.map((shuttlecock) => (
@@ -439,12 +439,9 @@ a.n ${account.accountName}`
               <input
                 type="text"
                 value={shuttlecockPrice ? `Rp ${shuttlecockPrice.toLocaleString()}` : ''}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, '')
-                  setShuttlecockPrice(parseInt(value) || 0)
-                }}
-                className="w-full p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
+                disabled
+                className="w-full p-3 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                style={{ borderColor: '#66B933' }}
                 placeholder="Rp 0"
               />
             </div>
@@ -457,14 +454,14 @@ a.n ${account.accountName}`
                   <button
                     key={num}
                     onClick={() => setDuration(num)}
-                    className={`p-2 border-2 font-bold text-sm transition-colors ${
+                    className={`p-3 border font-bold text-sm transition-colors rounded-lg ${
                       duration === num
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-300 text-black hover:bg-gray-400'
+                        ? 'text-white shadow-lg'
+                        : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
                     }`}
                     style={{ 
-                      borderStyle: duration === num ? 'inset' : 'outset',
-                      borderColor: '#808080'
+                      backgroundColor: duration === num ? '#66B933' : undefined,
+                      borderColor: duration === num ? '#66B933' : undefined
                     }}
                   >
                     {num} jam
@@ -481,14 +478,14 @@ a.n ${account.accountName}`
                   <button
                     key={num}
                     onClick={() => setShuttlecockCount(num)}
-                    className={`p-2 border-2 font-bold text-sm transition-colors ${
+                    className={`p-3 border font-bold text-sm transition-colors rounded-lg ${
                       shuttlecockCount === num
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-300 text-black hover:bg-gray-400'
+                        ? 'text-white shadow-lg'
+                        : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
                     }`}
                     style={{ 
-                      borderStyle: shuttlecockCount === num ? 'inset' : 'outset',
-                      borderColor: '#808080'
+                      backgroundColor: shuttlecockCount === num ? '#66B933' : undefined,
+                      borderColor: shuttlecockCount === num ? '#66B933' : undefined
                     }}
                   >
                     {num}
@@ -506,14 +503,14 @@ a.n ${account.accountName}`
                 <button
                   key={num}
                   onClick={() => setPlayerCount(num)}
-                  className={`p-2 border-2 font-bold text-sm transition-colors ${
+                  className={`p-3 border font-bold text-sm transition-colors rounded-lg ${
                     playerCount === num
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-300 text-black hover:bg-gray-400'
+                      ? 'text-white shadow-lg'
+                      : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
                   }`}
                   style={{ 
-                    borderStyle: playerCount === num ? 'inset' : 'outset',
-                    borderColor: '#808080'
+                    backgroundColor: playerCount === num ? '#66B933' : undefined,
+                    borderColor: playerCount === num ? '#66B933' : undefined
                   }}
                 >
                   {num}
@@ -529,8 +526,8 @@ a.n ${account.accountName}`
               <select
                 value={newAccount.bankName}
                 onChange={(e) => setNewAccount({...newAccount, bankName: e.target.value})}
-                className="p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
+                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ borderColor: '#66B933' }}
               >
                 <option value="">Pilih Bank...</option>
                 {bankOptions.map((bank) => (
@@ -542,53 +539,120 @@ a.n ${account.accountName}`
                 placeholder="Nomor Rekening"
                 value={newAccount.accountNumber}
                 onChange={(e) => setNewAccount({...newAccount, accountNumber: e.target.value})}
-                className="p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
+                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ borderColor: '#66B933' }}
               />
               <input
                 type="text"
                 placeholder="Nama Pemilik"
                 value={newAccount.accountName}
                 onChange={(e) => setNewAccount({...newAccount, accountName: e.target.value})}
-                className="p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
+                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ borderColor: '#66B933' }}
               />
               <button
                 onClick={addBankAccount}
-                className="px-4 py-2 bg-gray-300 text-black font-bold border-2 hover:bg-gray-400"
-                style={{ borderStyle: 'outset', borderColor: '#808080' }}
+                className="px-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200"
+                style={{ backgroundColor: '#66B933' }}
               >
                 Tambah
               </button>
             </div>
           </div>
 
-          {/* Pilih Rekening Bank */}
+          {/* Daftar Rekening Bank */}
           {bankAccounts.length > 0 && (
             <div className="mt-6">
-              <label className="block text-sm font-bold mb-4 text-black">💳 Pilih Rekening untuk Transfer</label>
+              <label className="block text-sm font-bold mb-4 text-gray-800">💳 Daftar Rekening Bank</label>
               <div className="grid md:grid-cols-2 gap-4">
                 {bankAccounts.map((account, index) => (
                   <div
                     key={index}
-                    onClick={() => setSelectedAccount(account)}
-                    className={`p-4 border-2 cursor-pointer transition-colors ${
-                      selectedAccount?.accountNumber === account.accountNumber
-                        ? 'bg-blue-200 border-blue-600'
-                        : 'bg-gray-100 hover:bg-gray-200 border-gray-400'
-                    }`}
+                    className="relative w-full h-56 bg-gradient-to-br text-white rounded-2xl shadow-2xl transition-all duration-300 hover:shadow-3xl hover:-translate-y-2 overflow-hidden"
                     style={{ 
-                      borderStyle: selectedAccount?.accountNumber === account.accountNumber ? 'inset' : 'outset',
-                      borderColor: selectedAccount?.accountNumber === account.accountNumber ? '#2563eb' : '#808080'
+                      background: `linear-gradient(135deg, #66B933 0%, #4a9025 50%, #2d5a16 100%)`,
+                      aspectRatio: '1.6/1'
                     }}
                   >
-                    <div className="font-bold text-lg text-black mb-2">{account.bankName}</div>
-                    <div className="text-sm text-gray-700 mb-1">
-                      <span className="font-medium">No. Rekening:</span> {account.accountNumber}
+                    {/* Card Pattern */}
+                    <div className="absolute inset-0 opacity-10">
+                      <div className="absolute top-4 right-4 w-16 h-16 border-2 border-white rounded-full"></div>
+                      <div className="absolute top-8 right-8 w-8 h-8 border border-white rounded-full"></div>
+                      <div className="absolute bottom-4 left-4 w-12 h-12 border border-white rounded-lg rotate-45"></div>
                     </div>
-                    <div className="text-sm text-gray-700">
-                      <span className="font-medium">Atas Nama:</span> {account.accountName}
+
+                    {/* Chip */}
+                    <div className="absolute top-6 left-6">
+                      <div className="w-12 h-9 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-lg shadow-lg">
+                        <div className="w-full h-full bg-gradient-to-br from-yellow-200 to-yellow-400 rounded-lg p-1">
+                          <div className="w-full h-full bg-yellow-300 rounded grid grid-cols-3 gap-px">
+                            {[...Array(9)].map((_, i) => (
+                              <div key={i} className="bg-yellow-400 rounded-sm"></div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Bank Name */}
+                    <div className="absolute top-6 right-6">
+                      <div className="text-right">
+                        <div className="text-lg font-black tracking-wider">{account.bankName}</div>
+                        <div className="text-xs opacity-80 font-medium">DEBIT CARD</div>
+                      </div>
+                    </div>
+
+                    {/* Card Number */}
+                    <div className="absolute top-24 left-6 right-6">
+                      <div className="text-xl font-mono font-bold tracking-widest mb-1">
+                        {account.accountNumber.replace(/(\d{4})/g, '$1 ').trim()}
+                      </div>
+                      <div className="text-xs opacity-80 font-medium">CARD NUMBER</div>
+                    </div>
+
+                    {/* Card Holder */}
+                    <div className="absolute bottom-6 left-6 right-6">
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <div className="text-sm font-bold tracking-wide uppercase">
+                            {account.accountName}
+                          </div>
+                          <div className="text-xs opacity-80 font-medium">CARD HOLDER</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold">12/28</div>
+                          <div className="text-xs opacity-80 font-medium">VALID THRU</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contactless Symbol */}
+                    <div className="absolute top-20 right-6">
+                      <div className="w-8 h-8 opacity-60">
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Delete Button */}
+                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                      <button
+                        onClick={() => {
+                          const updatedAccounts = bankAccounts.filter((_, i) => i !== index)
+                          setBankAccounts(updatedAccounts)
+                          if (selectedAccount === account) {
+                            setSelectedAccount(null)
+                          }
+                        }}
+                        className="px-3 py-1 bg-red-500/80 hover:bg-red-600 text-white text-xs rounded-full transition-colors duration-200"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+
+                    {/* Shine Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 hover:opacity-10 transform -skew-x-12 -translate-x-full hover:translate-x-full transition-all duration-1000"></div>
                   </div>
                 ))}
               </div>
@@ -596,363 +660,129 @@ a.n ${account.accountName}`
           )}
         </div>
 
-        {/* Hasil Perhitungan */}
-        <div className="bg-gray-200 border-4 rounded-none shadow-lg p-6 mb-6" style={{
-          borderStyle: 'inset',
-          borderWidth: '2px',
-          borderColor: '#c0c0c0'
-        }}>
-          <h2 className="text-xl font-bold mb-4 text-black">💰 Hasil Perhitungan</h2>
+        {/* Hasil Perhitungan - Badminton Scoreboard Style */}
+        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl shadow-2xl p-6 mb-6 overflow-hidden relative">
+          {/* LED Border Effect */}
+          <div className="absolute inset-0 rounded-2xl border-4 border-green-400 opacity-60 animate-pulse"></div>
+          
+          {/* Header */}
+          <div className="text-center mb-6 relative z-10">
+            <div className="bg-green-500 text-black px-6 py-2 rounded-full inline-block font-black text-lg tracking-wider shadow-lg">
+              🏸 PERHITUNGAN BIAYA AKHIR 🏸
+            </div>
+          </div>
+
           {selectedCourt && selectedShuttlecock && courtPrice > 0 && shuttlecockPrice > 0 ? (
-            <div className="space-y-2 text-black">
-              <div className="flex justify-between">
-                <span>⏱️ Durasi Bermain:</span>
-                <span className="font-bold">{duration} jam</span>
+            <div className="relative z-10">
+              {/* Main Score Display */}
+              <div className="bg-black rounded-xl p-6 mb-6 border-2 border-green-400">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                  {/* Duration */}
+                  <div className="bg-gradient-to-b from-green-400 to-green-600 text-black rounded-lg p-4">
+                    <div className="text-xs font-bold opacity-80">DURASI</div>
+                    <div className="text-3xl font-black">{duration}</div>
+                    <div className="text-xs font-bold opacity-80">JAM</div>
+                  </div>
+                  
+                  {/* Players */}
+                  <div className="bg-gradient-to-b from-yellow-400 to-yellow-600 text-black rounded-lg p-4">
+                    <div className="text-xs font-bold opacity-80">PEMAIN</div>
+                    <div className="text-3xl font-black">{playerCount}</div>
+                    <div className="text-xs font-bold opacity-80">ORANG</div>
+                  </div>
+                  
+                  {/* Shuttlecocks */}
+                  <div className="bg-gradient-to-b from-blue-400 to-blue-600 text-white rounded-lg p-4">
+                    <div className="text-xs font-bold opacity-80">SHUTTLECOCK</div>
+                    <div className="text-3xl font-black">{shuttlecockCount}</div>
+                    <div className="text-xs font-bold opacity-80">BIJI</div>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>🏟️ Biaya Lapangan ({duration} jam):</span>
-                <span>Rp {(courtPrice * duration).toLocaleString()}</span>
+
+              {/* Cost Breakdown */}
+              <div className="bg-gray-800 rounded-xl p-4 mb-6 border border-gray-600">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-green-400">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                      🏟️ Lapangan ({duration} jam)
+                    </span>
+                    <span className="font-mono font-bold">Rp {(courtPrice * duration).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-yellow-400">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                      🏸 Shuttlecock ({shuttlecockCount} biji)
+                    </span>
+                    <span className="font-mono font-bold">Rp {(shuttlecockPrice * shuttlecockCount).toLocaleString()}</span>
+                  </div>
+                  <div className="border-t border-gray-600 pt-3">
+                    <div className="flex justify-between items-center text-white text-lg">
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                        💳 TOTAL BIAYA
+                      </span>
+                      <span className="font-mono font-black">Rp {((courtPrice * duration) + (shuttlecockPrice * shuttlecockCount)).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>🏸 Biaya Shuttlecock ({shuttlecockCount} biji):</span>
-                <span>Rp {(shuttlecockPrice * shuttlecockCount).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between font-bold border-t-2 pt-2 border-gray-400">
-                <span>💳 Total Biaya:</span>
-                <span>Rp {((courtPrice * duration) + (shuttlecockPrice * shuttlecockCount)).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold bg-yellow-200 p-3 border-2" style={{
-                borderStyle: 'inset',
-                borderColor: '#808080'
-              }}>
-                <span>💰 Biaya per Orang ({playerCount} orang):</span>
-                <span>Rp {calculateTotal().toLocaleString()}</span>
+
+              {/* Final Score - Cost Per Person */}
+              <div className="relative">
+                <div className="bg-gradient-to-r from-green-500 via-green-400 to-green-500 text-black rounded-2xl p-6 text-center shadow-2xl">
+                  <div className="text-sm font-bold opacity-80 mb-2">BIAYA PER ORANG</div>
+                  <div className="text-4xl md:text-6xl font-black tracking-wider mb-2">
+                    Rp {calculateTotal().toLocaleString()}
+                  </div>
+                  <div className="text-sm font-bold opacity-80">
+                    {playerCount} PEMAIN • {selectedCourt.name}
+                  </div>
+                </div>
+                
+                {/* Celebration Effect */}
+                <div className="absolute -top-2 -left-2 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
+                <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-yellow-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
+                <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-ping" style={{ animationDelay: '1.5s' }}></div>
               </div>
             </div>
           ) : (
-            <p className="text-gray-600">Lengkapi data untuk melihat perhitungan</p>
+            <div className="text-center text-gray-400 relative z-10">
+              <div className="text-6xl mb-4">🏸</div>
+              <p className="text-lg">Lengkapi data untuk melihat perhitungan biaya akhir</p>
+            </div>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
           <button
             onClick={exportReceipt}
             disabled={!selectedCourt || !selectedShuttlecock || courtPrice === 0 || shuttlecockPrice === 0}
-            className="flex items-center gap-2 px-6 py-3 bg-gray-300 text-black font-bold border-2 hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
-            style={{ borderStyle: 'outset', borderColor: '#808080' }}
+            className="group relative overflow-hidden bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100"
           >
-            <Download size={20} />
-            Export Struk
+            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            <div className="relative flex items-center justify-center gap-3">
+              <Download size={22} className="group-hover:animate-bounce" />
+              <span className="text-sm md:text-base">Export Struk</span>
+            </div>
           </button>
           
           <button
             onClick={shareToWhatsApp}
             disabled={!selectedCourt || !selectedShuttlecock || courtPrice === 0 || shuttlecockPrice === 0}
-            className="flex items-center gap-2 px-6 py-3 bg-green-400 text-black font-bold border-2 hover:bg-green-500 disabled:bg-gray-200 disabled:cursor-not-allowed"
-            style={{ borderStyle: 'outset', borderColor: '#808080' }}
+            className="group relative overflow-hidden bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100"
           >
-            <Share2 size={20} />
-            Share ke WhatsApp
+            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            <div className="relative flex items-center justify-center gap-3">
+              <Share2 size={22} className="group-hover:animate-pulse" />
+              <span className="text-sm md:text-base">Share WhatsApp</span>
+            </div>
           </button>
-          
-          <label className="flex items-center gap-2 px-6 py-3 bg-blue-400 text-black font-bold border-2 hover:bg-blue-500 cursor-pointer"
-            style={{ borderStyle: 'outset', borderColor: '#808080' }}>
-            <Upload size={20} />
-            Import Invoice
-            <input
-              type="file"
-              accept=".json"
-              onChange={importInvoice}
-              className="hidden"
-            />
-          </label>
         </div>
       </div>
-
-      {/* Login Modal */}
-      {showLogin && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-200 border-4 rounded-none p-6" style={{ borderStyle: 'outset', borderColor: '#808080' }}>
-            <h2 className="text-xl font-bold mb-4 text-black">Login Admin</h2>
-            <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Username"
-                value={loginForm.username}
-                onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
-                className="w-full p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                className="w-full p-2 border-2 rounded-none bg-white text-black"
-                style={{ borderStyle: 'inset', borderColor: '#808080' }}
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={handleLogin}
-                  className="px-4 py-2 bg-gray-300 text-black font-bold border-2 hover:bg-gray-400"
-                  style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                >
-                  Login
-                </button>
-                <button
-                  onClick={() => setShowLogin(false)}
-                  className="px-4 py-2 bg-gray-300 text-black font-bold border-2 hover:bg-gray-400"
-                  style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                >
-                  Batal
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Admin Menu */}
-      {showAdminMenu && isLoggedIn && (
-        <div className="bg-gray-200 border-4 rounded-none shadow-lg p-6 mt-6" style={{ borderStyle: 'inset', borderColor: '#c0c0c0' }}>
-          <h2 className="text-xl font-bold mb-4 text-black">Admin Panel - Kelola Data</h2>
-          
-          <div className="space-y-8">
-            {/* Manage Courts */}
-            <div>
-              <h3 className="font-bold mb-4 text-black">🏟️ Kelola Lapangan</h3>
-              
-              {/* Add New Court */}
-              <div className="bg-gray-100 p-4 border-2 mb-4" style={{ borderStyle: 'inset', borderColor: '#808080' }}>
-                <h4 className="font-bold mb-2 text-black">Tambah Lapangan Baru</h4>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Nama Lapangan"
-                    value={newCourt.name}
-                    onChange={(e) => setNewCourt({...newCourt, name: e.target.value})}
-                    className="w-full p-2 border-2 rounded-none bg-white text-black"
-                    style={{ borderStyle: 'inset', borderColor: '#808080' }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Lokasi"
-                    value={newCourt.location}
-                    onChange={(e) => setNewCourt({...newCourt, location: e.target.value})}
-                    className="w-full p-2 border-2 rounded-none bg-white text-black"
-                    style={{ borderStyle: 'inset', borderColor: '#808080' }}
-                  />
-                  <button
-                    onClick={addCourt}
-                    className="w-full px-4 py-2 bg-green-400 text-black font-bold border-2 hover:bg-green-500"
-                    style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                  >
-                    Tambah
-                  </button>
-                </div>
-              </div>
-
-              {/* Courts List */}
-              <div className="space-y-2">
-                {courts.map((court, index) => (
-                  <div key={index} className="bg-white p-3 border-2 flex items-center justify-between" style={{ borderStyle: 'inset', borderColor: '#808080' }}>
-                    {editingCourt?.name === court.name ? (
-                      <div className="flex-1 grid md:grid-cols-2 gap-2 mr-2">
-                        <input
-                          type="text"
-                          value={editingCourt.name}
-                          onChange={(e) => setEditingCourt({...editingCourt, name: e.target.value})}
-                          className="p-1 border-2 rounded-none bg-white text-black"
-                          style={{ borderStyle: 'inset', borderColor: '#808080' }}
-                        />
-                        <input
-                          type="text"
-                          value={editingCourt.location}
-                          onChange={(e) => setEditingCourt({...editingCourt, location: e.target.value})}
-                          className="p-1 border-2 rounded-none bg-white text-black"
-                          style={{ borderStyle: 'inset', borderColor: '#808080' }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex-1 text-black">
-                        <strong>{court.name}</strong> - {court.location}
-                      </div>
-                    )}
-                    <div className="flex gap-1">
-                      {editingCourt?.name === court.name ? (
-                        <>
-                          <button
-                            onClick={updateCourt}
-                            className="px-2 py-1 bg-blue-400 text-black font-bold border-2 hover:bg-blue-500 text-xs"
-                            style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                          >
-                            Simpan
-                          </button>
-                          <button
-                            onClick={() => setEditingCourt(null)}
-                            className="px-2 py-1 bg-gray-400 text-black font-bold border-2 hover:bg-gray-500 text-xs"
-                            style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                          >
-                            Batal
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => setEditingCourt(court)}
-                            className="px-2 py-1 bg-yellow-400 text-black font-bold border-2 hover:bg-yellow-500 text-xs"
-                            style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => deleteCourt(court.name)}
-                            className="px-2 py-1 bg-red-400 text-black font-bold border-2 hover:bg-red-500 text-xs"
-                            style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                          >
-                            Hapus
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Manage Shuttlecocks */}
-            <div>
-              <h3 className="font-bold mb-4 text-black">🏸 Kelola Shuttlecock</h3>
-              
-              {/* Add New Shuttlecock */}
-              <div className="bg-gray-100 p-4 border-2 mb-4" style={{ borderStyle: 'inset', borderColor: '#808080' }}>
-                <h4 className="font-bold mb-2 text-black">Tambah Shuttlecock Baru</h4>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Nama Shuttlecock"
-                    value={newShuttlecock.name}
-                    onChange={(e) => setNewShuttlecock({...newShuttlecock, name: e.target.value})}
-                    className="w-full p-2 border-2 rounded-none bg-white text-black"
-                    style={{ borderStyle: 'inset', borderColor: '#808080' }}
-                  />
-                  <button
-                    onClick={addShuttlecock}
-                    className="w-full px-4 py-2 bg-green-400 text-black font-bold border-2 hover:bg-green-500"
-                    style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                  >
-                    Tambah
-                  </button>
-                </div>
-              </div>
-
-              {/* Shuttlecocks List */}
-              <div className="space-y-2">
-                {shuttlecocks.map((shuttlecock, index) => (
-                  <div key={index} className="bg-white p-3 border-2 flex items-center justify-between" style={{ borderStyle: 'inset', borderColor: '#808080' }}>
-                    {editingShuttlecock?.name === shuttlecock.name ? (
-                      <div className="flex-1 mr-2">
-                        <input
-                          type="text"
-                          value={editingShuttlecock.name}
-                          onChange={(e) => setEditingShuttlecock({...editingShuttlecock, name: e.target.value})}
-                          className="w-full p-1 border-2 rounded-none bg-white text-black"
-                          style={{ borderStyle: 'inset', borderColor: '#808080' }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex-1 text-black">
-                        <strong>{shuttlecock.name}</strong>
-                      </div>
-                    )}
-                    <div className="flex gap-1">
-                      {editingShuttlecock?.name === shuttlecock.name ? (
-                        <>
-                          <button
-                            onClick={updateShuttlecock}
-                            className="px-2 py-1 bg-blue-400 text-black font-bold border-2 hover:bg-blue-500 text-xs"
-                            style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                          >
-                            Simpan
-                          </button>
-                          <button
-                            onClick={() => setEditingShuttlecock(null)}
-                            className="px-2 py-1 bg-gray-400 text-black font-bold border-2 hover:bg-gray-500 text-xs"
-                            style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                          >
-                            Batal
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => setEditingShuttlecock(shuttlecock)}
-                            className="px-2 py-1 bg-yellow-400 text-black font-bold border-2 hover:bg-yellow-500 text-xs"
-                            style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => deleteShuttlecock(shuttlecock.name)}
-                            className="px-2 py-1 bg-red-400 text-black font-bold border-2 hover:bg-red-500 text-xs"
-                            style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                          >
-                            Hapus
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Manage Banks */}
-            <div>
-              <h3 className="font-bold mb-4 text-black">🏦 Kelola Bank</h3>
-              
-              {/* Add New Bank */}
-              <div className="bg-gray-100 p-4 border-2 mb-4" style={{ borderStyle: 'inset', borderColor: '#808080' }}>
-                <h4 className="font-bold mb-2 text-black">Tambah Bank Baru</h4>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Nama Bank"
-                    value={newBank}
-                    onChange={(e) => setNewBank(e.target.value)}
-                    className="w-full p-2 border-2 rounded-none bg-white text-black"
-                    style={{ borderStyle: 'inset', borderColor: '#808080' }}
-                  />
-                  <button
-                    onClick={addBank}
-                    className="w-full px-4 py-2 bg-green-400 text-black font-bold border-2 hover:bg-green-500"
-                    style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                  >
-                    Tambah
-                  </button>
-                </div>
-              </div>
-
-              {/* Banks List */}
-              <div className="grid md:grid-cols-3 gap-2">
-                {bankOptions.map((bank, index) => (
-                  <div key={index} className="bg-white p-3 border-2 flex items-center justify-between" style={{ borderStyle: 'inset', borderColor: '#808080' }}>
-                    <span className="text-black font-medium">{bank}</span>
-                    <button
-                      onClick={() => deleteBank(bank)}
-                      className="px-2 py-1 bg-red-400 text-black font-bold border-2 hover:bg-red-500 text-xs"
-                      style={{ borderStyle: 'outset', borderColor: '#808080' }}
-                    >
-                      Hapus
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
