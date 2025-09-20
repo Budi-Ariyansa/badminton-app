@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Download, Share2 } from 'lucide-react'
+import courtsData from '../data/courts.json'
+import shuttlecocksData from '../data/shuttlecocks.json'
+import banksData from '../data/banks.json'
 
 interface Court {
   name: string
@@ -41,36 +44,10 @@ export default function BadmintonCalculator() {
   })
 
   useEffect(() => {
-    // Load data from JSON files
-    fetch('/data/courts.json')
-      .then(res => res.json())
-      .then(data => setCourts(data))
-      .catch(() => {
-        // Fallback data
-        setCourts([
-          { name: 'GOR Senayan', location: 'Jakarta Pusat', pricePerHour: 150000 },
-          { name: 'Badminton Hall BSD', location: 'Tangerang Selatan', pricePerHour: 120000 }
-        ])
-      })
-
-    fetch('/data/shuttlecocks.json')
-      .then(res => res.json())
-      .then(data => setShuttlecocks(data))
-      .catch(() => {
-        // Fallback data
-        setShuttlecocks([
-          { name: 'Yonex AS-30', pricePerPiece: 25000 },
-          { name: 'Victor Gold', pricePerPiece: 22000 }
-        ])
-      })
-
-    fetch('/data/banks.json')
-      .then(res => res.json())
-      .then(data => setBankOptions(data))
-      .catch(() => {
-        // Fallback data
-        setBankOptions(['BCA', 'BRI', 'BANK JAGO', 'ALADIN', 'BNI', 'BLU BY BCA', 'MANDIRI', 'CIMB NIAGA', 'DANAMON', 'PERMATA', 'MAYBANK', 'OCBC NISP', 'PANIN', 'BTN', 'BSI'])
-      })
+    // Load data from imported JSON files
+    setCourts(courtsData)
+    setShuttlecocks(shuttlecocksData)
+    setBankOptions(banksData)
   }, [])
 
   const formatDateToIndonesian = (dateString: string) => {
@@ -272,50 +249,33 @@ export default function BadmintonCalculator() {
 
   const shareToWhatsApp = () => {
     const invoice = generateInvoice()
-    const message = `================================
-🏸 STRUK BADMINTON 🏸
-================================
+    const message = `🏸 Struk Pembayaran Badminton 🏸
 
+Halo teman-teman! 👋
+Berikut adalah rincian biaya main bulutangkis hari ini:
+
+Waktu & Lokasi 📍
 Tanggal: ${formatDateToIndonesian(invoice.date)}
-Durasi : ${invoice.duration} jam
-Court  : ${invoice.court?.name}
-Lokasi : ${invoice.court?.location}
+Durasi: ${invoice.duration} jam
+Gor: ${invoice.court?.name}
+Lokasi: ${invoice.court?.location}
 
---------------------------------
-RINCIAN BIAYA
---------------------------------
+Rincian Biaya 💰
+Sewa Lapangan (${invoice.duration} jam): Rp ${invoice.courtPrice.toLocaleString()}
+Shuttlecock (${invoice.shuttlecockCount} buah): Rp ${invoice.shuttlecockPrice.toLocaleString()}
+Total Biaya: Rp ${invoice.totalCost.toLocaleString()}
 
-Sewa Lapangan (${invoice.duration} jam)
-${' '.repeat(25)}Rp ${invoice.courtPrice.toLocaleString()}
+Jumlah Orang: ${invoice.playerCount} orang
+Biaya per Orang: Rp ${Math.round(invoice.costPerPerson).toLocaleString()} ✨
 
-Shuttlecock (${invoice.shuttlecockCount} biji)
-${invoice.shuttlecock?.name}
-${' '.repeat(25)}Rp ${invoice.shuttlecockPrice.toLocaleString()}
+${invoice.bankAccounts && invoice.bankAccounts.length > 0 ? `Pembayaran 💳
+Silakan transfer sesuai dengan biaya per orang ke salah satu rekening di bawah ini.
 
---------------------------------
-
-TOTAL BIAYA:${' '.repeat(10)}Rp ${invoice.totalCost.toLocaleString()}
-JUMLAH ORANG: ${invoice.playerCount}
-
-================================
-BIAYA PER ORANG
-Rp ${Math.round(invoice.costPerPerson).toLocaleString()}
-================================
-
-${invoice.bankAccounts && invoice.bankAccounts.length > 0 ? `TRANSFER KE:
---------------------------------
-
-${invoice.bankAccounts.map((account, index) => 
-`${index + 1}. ${account.bankName}
+${invoice.bankAccounts.map(account => 
+`${account.bankName}
 No. Rek: ${account.accountNumber}
 A.n: ${account.accountName}`
-).join('\n\n')}
-
---------------------------------` : ''}
-
-Terima Kasih Telah Bermain!
-Semoga Sehat Selalu 🏸
-Sampai Jumpa Lagi!`
+).join('\n\n')}` : ''}`
 
     const encodedMessage = encodeURIComponent(message)
     window.open(`https://wa.me/?text=${encodedMessage}`, '_blank')

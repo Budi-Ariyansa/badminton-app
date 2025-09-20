@@ -30,18 +30,18 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      // Load data from JSON files
-      fetch('/data/courts.json')
+      // Load data from API endpoints
+      fetch('/api/courts')
         .then(res => res.json())
         .then(data => setCourts(data))
         .catch(() => setCourts([]))
 
-      fetch('/data/shuttlecocks.json')
+      fetch('/api/shuttlecocks')
         .then(res => res.json())
         .then(data => setShuttlecocks(data))
         .catch(() => setShuttlecocks([]))
 
-      fetch('/data/banks.json')
+      fetch('/api/banks')
         .then(res => res.json())
         .then(data => setBankOptions(data))
         .catch(() => setBankOptions([]))
@@ -59,49 +59,102 @@ export default function AdminPage() {
 
   const addCourt = () => {
     if (newCourt.name && newCourt.location && newCourt.pricePerHour > 0) {
-      setCourts([...courts, newCourt])
+      const updatedCourts = [...courts, newCourt]
+      setCourts(updatedCourts)
+      saveCourts(updatedCourts)
       setNewCourt({ name: '', location: '', pricePerHour: 0 })
     }
   }
 
   const updateCourt = () => {
     if (editingCourt) {
-      setCourts(courts.map(c => c.name === editingCourt.name ? editingCourt : c))
+      const updatedCourts = courts.map(c => c.name === editingCourt.name ? editingCourt : c)
+      setCourts(updatedCourts)
+      saveCourts(updatedCourts)
       setEditingCourt(null)
     }
   }
 
   const deleteCourt = (name: string) => {
-    setCourts(courts.filter(c => c.name !== name))
+    const updatedCourts = courts.filter(c => c.name !== name)
+    setCourts(updatedCourts)
+    saveCourts(updatedCourts)
+  }
+
+  const saveCourts = (courtsData: any[]) => {
+    fetch('/api/courts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(courtsData)
+    })
   }
 
   const addShuttlecock = () => {
     if (newShuttlecock.name && newShuttlecock.pricePerPiece > 0) {
-      setShuttlecocks([...shuttlecocks, newShuttlecock])
+      const updatedShuttlecocks = [...shuttlecocks, newShuttlecock]
+      setShuttlecocks(updatedShuttlecocks)
+      saveShuttlecocks(updatedShuttlecocks)
       setNewShuttlecock({ name: '', pricePerPiece: 0 })
     }
   }
 
   const updateShuttlecock = () => {
     if (editingShuttlecock) {
-      setShuttlecocks(shuttlecocks.map(s => s.name === editingShuttlecock.name ? editingShuttlecock : s))
+      const updatedShuttlecocks = shuttlecocks.map(s => s.name === editingShuttlecock.name ? editingShuttlecock : s)
+      setShuttlecocks(updatedShuttlecocks)
+      saveShuttlecocks(updatedShuttlecocks)
       setEditingShuttlecock(null)
     }
   }
 
   const deleteShuttlecock = (name: string) => {
-    setShuttlecocks(shuttlecocks.filter(s => s.name !== name))
+    const updatedShuttlecocks = shuttlecocks.filter(s => s.name !== name)
+    setShuttlecocks(updatedShuttlecocks)
+    saveShuttlecocks(updatedShuttlecocks)
   }
 
-  const addBank = () => {
+  const saveShuttlecocks = (shuttlecocksData: any[]) => {
+    fetch('/api/shuttlecocks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(shuttlecocksData)
+    })
+  }
+
+  // Save functions
+  const saveBanks = async () => {
+    await fetch('/api/banks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bankOptions)
+    })
+  }
+
+  const addBank = async () => {
     if (newBank && !bankOptions.includes(newBank)) {
-      setBankOptions([...bankOptions, newBank])
+      const updatedBanks = [...bankOptions, newBank]
+      setBankOptions(updatedBanks)
       setNewBank('')
+      
+      // Save to server
+      await fetch('/api/banks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedBanks)
+      })
     }
   }
 
-  const deleteBank = (bank: string) => {
-    setBankOptions(bankOptions.filter(b => b !== bank))
+  const deleteBank = async (bank: string) => {
+    const updatedBanks = bankOptions.filter(b => b !== bank)
+    setBankOptions(updatedBanks)
+    
+    // Save to server
+    await fetch('/api/banks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedBanks)
+    })
   }
 
   if (showLogin) {
