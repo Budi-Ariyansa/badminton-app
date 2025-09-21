@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Download, Share2 } from 'lucide-react'
+import { Download, Share2, History } from 'lucide-react'
 import courtsData from '../data/courts.json'
 import shuttlecocksData from '../data/shuttlecocks.json'
 import banksData from '../data/banks.json'
+import BookingHistory from './components/BookingHistory'
+import Toast from './components/Toast'
 
 interface Court {
   name: string
@@ -42,6 +44,8 @@ export default function BadmintonCalculator() {
     accountNumber: '',
     bankName: ''
   })
+  const [showBookingHistory, setShowBookingHistory] = useState(false)
+  const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error', isVisible: false })
 
   useEffect(() => {
     // Load data from imported JSON files
@@ -78,22 +82,72 @@ export default function BadmintonCalculator() {
     return (courtCost + shuttlecockCost) / playerCount
   }
 
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type, isVisible: true })
+  }
+
+  const saveBooking = async () => {
+    if (!selectedCourt || !selectedShuttlecock || !playDate) {
+      showToast('Mohon lengkapi semua data terlebih dahulu!', 'error')
+      return
+    }
+
+    const totalCost = (courtPrice * duration) + (shuttlecockPrice * shuttlecockCount)
+    const costPerPerson = totalCost / playerCount
+
+    const booking = {
+      date: playDate,
+      courtName: selectedCourt.name,
+      courtLocation: selectedCourt.location,
+      courtPrice: courtPrice,
+      shuttlecockName: selectedShuttlecock.name,
+      shuttlecockPrice: shuttlecockPrice,
+      shuttlecockCount: shuttlecockCount,
+      duration: duration,
+      playerCount: playerCount,
+      totalCost: totalCost,
+      costPerPerson: costPerPerson,
+      bankName: selectedAccount?.bankName || null,
+      bankAccountName: selectedAccount?.accountName || null,
+      bankAccountNumber: selectedAccount?.accountNumber || null
+    }
+
+    try {
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(booking)
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
+        showToast('Booking berhasil disimpan!', 'success')
+      } else {
+        showToast(result.error || 'Gagal menyimpan booking', 'error')
+      }
+    } catch (error) {
+      console.error('Failed to save booking:', error)
+      showToast('Terjadi error saat menyimpan booking', 'error')
+    }
+  }
+
   const generateInvoice = () => {
     const total = calculateTotal()
     return {
       date: playDate,
-      duration,
+      duration: duration || 1,
       court: selectedCourt,
-      courtPrice,
+      courtPrice: courtPrice || 0,
       shuttlecock: selectedShuttlecock,
-      shuttlecockPrice,
-      shuttlecockCount,
-      playerCount,
+      shuttlecockPrice: shuttlecockPrice || 0,
+      shuttlecockCount: shuttlecockCount || 1,
+      playerCount: playerCount || 1,
       account: selectedAccount,
       bankAccounts,
-      costPerPerson: total,
+      costPerPerson: total || 0,
       totalCost: selectedCourt && selectedShuttlecock ? 
-        (courtPrice * duration) + (shuttlecockPrice * shuttlecockCount) : 0
+        ((courtPrice || 0) * (duration || 1)) + ((shuttlecockPrice || 0) * (shuttlecockCount || 1)) : 0
     }
   }
 
@@ -161,7 +215,7 @@ export default function BadmintonCalculator() {
     ctx.fillText(`Sewa Lapangan (${invoice.duration} jam)`, 20, y)
     y += lineHeight
     ctx.textAlign = 'right'
-    ctx.fillText(`Rp ${(invoice.courtPrice * invoice.duration).toLocaleString()}`, canvas.width - 20, y)
+    ctx.fillText(`Rp ${((invoice.courtPrice || 0) * (invoice.duration || 1)).toLocaleString()}`, canvas.width - 20, y)
     y += lineHeight * 1.5
     
     ctx.textAlign = 'left'
@@ -170,7 +224,7 @@ export default function BadmintonCalculator() {
     ctx.fillText(`${invoice.shuttlecock?.name}`, 20, y)
     y += lineHeight
     ctx.textAlign = 'right'
-    ctx.fillText(`Rp ${(invoice.shuttlecockPrice * invoice.shuttlecockCount).toLocaleString()}`, canvas.width - 20, y)
+    ctx.fillText(`Rp ${((invoice.shuttlecockPrice || 0) * (invoice.shuttlecockCount || 1)).toLocaleString()}`, canvas.width - 20, y)
     y += lineHeight * 2
     
     // Total
@@ -182,7 +236,7 @@ export default function BadmintonCalculator() {
     ctx.textAlign = 'left'
     ctx.fillText('TOTAL BIAYA:', 20, y)
     ctx.textAlign = 'right'
-    ctx.fillText(`Rp ${invoice.totalCost.toLocaleString()}`, canvas.width - 20, y)
+    ctx.fillText(`Rp ${(invoice.totalCost || 0).toLocaleString()}`, canvas.width - 20, y)
     y += lineHeight
     
     ctx.textAlign = 'left'
@@ -196,7 +250,7 @@ export default function BadmintonCalculator() {
     y += lineHeight
     ctx.fillText(`BIAYA PER ORANG`, canvas.width / 2, y)
     y += lineHeight
-    ctx.fillText(`Rp ${invoice.costPerPerson.toLocaleString()}`, canvas.width / 2, y)
+    ctx.fillText(`Rp ${(invoice.costPerPerson || 0).toLocaleString()}`, canvas.width / 2, y)
     y += lineHeight
     ctx.fillText('================================', canvas.width / 2, y)
     y += lineHeight * 2
@@ -261,12 +315,12 @@ Gor: ${invoice.court?.name}
 Lokasi: ${invoice.court?.location}
 
 Rincian Biaya 💰
-Sewa Lapangan (${invoice.duration} jam): Rp ${invoice.courtPrice.toLocaleString()}
-Shuttlecock (${invoice.shuttlecockCount} buah): Rp ${invoice.shuttlecockPrice.toLocaleString()}
-Total Biaya: Rp ${invoice.totalCost.toLocaleString()}
+Sewa Lapangan (${invoice.duration} jam): Rp ${(invoice.courtPrice || 0).toLocaleString()}
+Shuttlecock (${invoice.shuttlecockCount} buah): Rp ${((invoice.shuttlecockPrice || 0) * (invoice.shuttlecockCount || 1)).toLocaleString()}
+Total Biaya: Rp ${(invoice.totalCost || 0).toLocaleString()}
 
 Jumlah Orang: ${invoice.playerCount} orang
-Biaya per Orang: Rp ${Math.round(invoice.costPerPerson).toLocaleString()} ✨
+Biaya per Orang: Rp ${Math.round(invoice.costPerPerson || 0).toLocaleString()} ✨
 
 ${invoice.bankAccounts && invoice.bankAccounts.length > 0 ? `Pembayaran 💳
 Silakan transfer sesuai dengan biaya per orang ke salah satu rekening di bawah ini.
@@ -282,9 +336,9 @@ A.n: ${account.accountName}`
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-xl shadow-lg mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6">
           <div className="text-white p-3 md:p-6 rounded-t-xl" style={{ 
             background: 'linear-gradient(135deg, #66B933 0%, #4a9025 100%)',
             boxShadow: '0 4px 20px rgba(102, 185, 51, 0.3)'
@@ -313,18 +367,18 @@ A.n: ${account.accountName}`
           </div>
         </div>
 
-        <div className="bg-white border rounded-lg shadow p-6 mb-6" style={{
+        <div className="bg-white dark:bg-gray-800 border rounded-lg shadow p-6 mb-6" style={{
           borderColor: '#66B933'
         }}>
           <div className="grid md:grid-cols-2 gap-6">
             {/* Tanggal */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold mb-2 text-gray-800">📅 Tanggal Bermain</label>
+              <label className="block text-sm font-bold mb-2 text-gray-800 dark:text-gray-200">📅 Tanggal Bermain</label>
               <input
                 type="date"
                 value={playDate}
                 onChange={(e) => setPlayDate(e.target.value)}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 style={{ 
                   borderColor: '#66B933'
                 }}
@@ -338,7 +392,7 @@ A.n: ${account.accountName}`
 
             {/* Lapangan */}
             <div>
-              <label className="block text-sm font-bold mb-2 text-black">🏟️ Pilih Lapangan</label>
+              <label className="block text-sm font-bold mb-2 text-black dark:text-white">🏟️ Pilih Lapangan</label>
               <select
                 value={selectedCourt?.name || ''}
                 onChange={(e) => {
@@ -346,7 +400,7 @@ A.n: ${account.accountName}`
                   setSelectedCourt(court || null)
                   setCourtPrice(court?.pricePerHour || 0)
                 }}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 style={{ borderColor: '#66B933' }}
               >
                 <option value="">Pilih lapangan...</option>
@@ -360,12 +414,12 @@ A.n: ${account.accountName}`
 
             {/* Harga Lapangan */}
             <div>
-              <label className="block text-sm font-bold mb-2 text-black">💰 Harga Lapangan per Jam</label>
+              <label className="block text-sm font-bold mb-2 text-black dark:text-white">💰 Harga Lapangan per Jam</label>
               <input
                 type="text"
-                value={courtPrice ? `Rp ${courtPrice.toLocaleString()}` : ''}
+                value={courtPrice ? `Rp ${courtPrice.toLocaleString()}` : 'Pilih lapangan dulu'}
                 disabled
-                className="w-full p-3 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                className="w-full p-3 border rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 cursor-not-allowed"
                 style={{ borderColor: '#66B933' }}
                 placeholder="Rp 0"
               />
@@ -373,7 +427,7 @@ A.n: ${account.accountName}`
 
             {/* Shuttlecock */}
             <div>
-              <label className="block text-sm font-bold mb-2 text-black">🏸 Pilih Shuttlecock</label>
+              <label className="block text-sm font-bold mb-2 text-black dark:text-white">🏸 Pilih Shuttlecock</label>
               <select
                 value={selectedShuttlecock?.name || ''}
                 onChange={(e) => {
@@ -381,7 +435,7 @@ A.n: ${account.accountName}`
                   setSelectedShuttlecock(shuttlecock || null)
                   setShuttlecockPrice(shuttlecock?.pricePerPiece || 0)
                 }}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 style={{ borderColor: '#66B933' }}
               >
                 <option value="">Pilih shuttlecock...</option>
@@ -395,12 +449,12 @@ A.n: ${account.accountName}`
 
             {/* Harga Shuttlecock */}
             <div>
-              <label className="block text-sm font-bold mb-2 text-black">💰 Harga Shuttlecock per Biji</label>
+              <label className="block text-sm font-bold mb-2 text-black dark:text-white">💰 Harga Shuttlecock per Biji</label>
               <input
                 type="text"
-                value={shuttlecockPrice ? `Rp ${shuttlecockPrice.toLocaleString()}` : ''}
+                value={shuttlecockPrice ? `Rp ${shuttlecockPrice.toLocaleString()}` : 'Pilih shuttlecock dulu'}
                 disabled
-                className="w-full p-3 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                className="w-full p-3 border rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 cursor-not-allowed"
                 style={{ borderColor: '#66B933' }}
                 placeholder="Rp 0"
               />
@@ -408,7 +462,7 @@ A.n: ${account.accountName}`
 
             {/* Durasi Bermain */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold mb-4 text-black">⏰ Durasi Bermain</label>
+              <label className="block text-sm font-bold mb-4 text-black dark:text-white">⏰ Durasi Bermain</label>
               <div className="grid grid-cols-5 gap-2">
                 {Array.from({ length: 5 }, (_, i) => i + 1).map((num) => (
                   <button
@@ -417,7 +471,7 @@ A.n: ${account.accountName}`
                     className={`p-3 border font-bold text-sm transition-colors rounded-lg ${
                       duration === num
                         ? 'text-white shadow-lg'
-                        : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
+                        : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 border-gray-300 dark:border-gray-600'
                     }`}
                     style={{ 
                       backgroundColor: duration === num ? '#66B933' : undefined,
@@ -432,7 +486,7 @@ A.n: ${account.accountName}`
 
             {/* Jumlah Shuttlecock */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold mb-4 text-black">🔢 Jumlah Shuttlecock</label>
+              <label className="block text-sm font-bold mb-4 text-black dark:text-white">🔢 Jumlah Shuttlecock</label>
               <div className="grid grid-cols-5 gap-2">
                 {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
                   <button
@@ -441,7 +495,7 @@ A.n: ${account.accountName}`
                     className={`p-3 border font-bold text-sm transition-colors rounded-lg ${
                       shuttlecockCount === num
                         ? 'text-white shadow-lg'
-                        : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
+                        : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 border-gray-300 dark:border-gray-600'
                     }`}
                     style={{ 
                       backgroundColor: shuttlecockCount === num ? '#66B933' : undefined,
@@ -457,7 +511,7 @@ A.n: ${account.accountName}`
 
           {/* Jumlah Pemain */}
           <div className="mt-6">
-            <label className="block text-sm font-bold mb-4 text-black">👥 Jumlah Pemain</label>
+            <label className="block text-sm font-bold mb-4 text-black dark:text-white">👥 Jumlah Pemain</label>
             <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
               {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => (
                 <button
@@ -466,7 +520,7 @@ A.n: ${account.accountName}`
                   className={`p-3 border font-bold text-sm transition-colors rounded-lg ${
                     playerCount === num
                       ? 'text-white shadow-lg'
-                      : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
+                      : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 border-gray-300 dark:border-gray-600'
                   }`}
                   style={{ 
                     backgroundColor: playerCount === num ? '#66B933' : undefined,
@@ -481,12 +535,12 @@ A.n: ${account.accountName}`
 
           {/* Input Rekening Bank */}
           <div className="mt-6">
-            <label className="block text-sm font-bold mb-4 text-black">🏦 Tambah Rekening Bank</label>
+            <label className="block text-sm font-bold mb-4 text-black dark:text-white">🏦 Tambah Rekening Bank</label>
             <div className="grid md:grid-cols-4 gap-4 mb-4">
               <select
                 value={newAccount.bankName}
                 onChange={(e) => setNewAccount({...newAccount, bankName: e.target.value})}
-                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 style={{ borderColor: '#66B933' }}
               >
                 <option value="">Pilih Bank...</option>
@@ -499,7 +553,7 @@ A.n: ${account.accountName}`
                 placeholder="Nomor Rekening"
                 value={newAccount.accountNumber}
                 onChange={(e) => setNewAccount({...newAccount, accountNumber: e.target.value})}
-                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 style={{ borderColor: '#66B933' }}
               />
               <input
@@ -507,7 +561,7 @@ A.n: ${account.accountName}`
                 placeholder="Nama Pemilik"
                 value={newAccount.accountName}
                 onChange={(e) => setNewAccount({...newAccount, accountName: e.target.value})}
-                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 style={{ borderColor: '#66B933' }}
               />
               <button
@@ -523,7 +577,7 @@ A.n: ${account.accountName}`
           {/* Daftar Rekening Bank */}
           {bankAccounts.length > 0 && (
             <div className="mt-6">
-              <label className="block text-sm font-bold mb-4 text-gray-800">💳 Daftar Rekening Bank</label>
+              <label className="block text-sm font-bold mb-4 text-gray-800 dark:text-gray-200">💳 Daftar Rekening Bank</label>
               <div className="grid md:grid-cols-2 gap-4">
                 {bankAccounts.map((account, index) => (
                   <div
@@ -668,14 +722,14 @@ A.n: ${account.accountName}`
                       <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                       🏟️ Lapangan ({duration} jam)
                     </span>
-                    <span className="font-mono font-bold">Rp {(courtPrice * duration).toLocaleString()}</span>
+                    <span className="font-mono font-bold">Rp {courtPrice && duration ? (courtPrice * duration).toLocaleString() : '0'}</span>
                   </div>
                   <div className="flex justify-between items-center text-yellow-400">
                     <span className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
                       🏸 Shuttlecock ({shuttlecockCount} biji)
                     </span>
-                    <span className="font-mono font-bold">Rp {(shuttlecockPrice * shuttlecockCount).toLocaleString()}</span>
+                    <span className="font-mono font-bold">Rp {shuttlecockPrice && shuttlecockCount ? (shuttlecockPrice * shuttlecockCount).toLocaleString() : '0'}</span>
                   </div>
                   <div className="border-t border-gray-600 pt-3">
                     <div className="flex justify-between items-center text-white text-lg">
@@ -683,7 +737,7 @@ A.n: ${account.accountName}`
                         <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                         💳 TOTAL BIAYA
                       </span>
-                      <span className="font-mono font-black">Rp {((courtPrice * duration) + (shuttlecockPrice * shuttlecockCount)).toLocaleString()}</span>
+                      <span className="font-mono font-black">Rp {courtPrice && shuttlecockPrice && duration && shuttlecockCount ? ((courtPrice * duration) + (shuttlecockPrice * shuttlecockCount)).toLocaleString() : '0'}</span>
                     </div>
                   </div>
                 </div>
@@ -694,10 +748,10 @@ A.n: ${account.accountName}`
                 <div className="bg-gradient-to-r from-green-500 via-green-400 to-green-500 text-black rounded-2xl p-6 text-center shadow-2xl">
                   <div className="text-sm font-bold opacity-80 mb-2">BIAYA PER ORANG</div>
                   <div className="text-4xl md:text-6xl font-black tracking-wider mb-2">
-                    Rp {calculateTotal().toLocaleString()}
+                    Rp {calculateTotal() ? calculateTotal().toLocaleString() : '0'}
                   </div>
                   <div className="text-sm font-bold opacity-80">
-                    {playerCount} PEMAIN • {selectedCourt.name}
+                    {playerCount} PEMAIN • {selectedCourt?.name || 'Pilih lapangan'}
                   </div>
                 </div>
                 
@@ -717,7 +771,7 @@ A.n: ${account.accountName}`
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
           <button
             onClick={exportReceipt}
             disabled={!selectedCourt || !selectedShuttlecock || courtPrice === 0 || shuttlecockPrice === 0}
@@ -727,6 +781,18 @@ A.n: ${account.accountName}`
             <div className="relative flex items-center justify-center gap-3">
               <Download size={22} className="group-hover:animate-bounce" />
               <span className="text-sm md:text-base">Export Struk</span>
+            </div>
+          </button>
+
+          <button
+            onClick={saveBooking}
+            disabled={!selectedCourt || !selectedShuttlecock || !playDate || courtPrice === 0 || shuttlecockPrice === 0}
+            className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100"
+          >
+            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            <div className="relative flex items-center justify-center gap-3">
+              <Download size={22} className="group-hover:animate-bounce" />
+              <span className="text-sm md:text-base">Simpan Booking</span>
             </div>
           </button>
           
@@ -742,7 +808,35 @@ A.n: ${account.accountName}`
             </div>
           </button>
         </div>
+
+        {/* History Button */}
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => setShowBookingHistory(true)}
+            className="group relative overflow-hidden bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            <div className="relative flex items-center justify-center gap-3">
+              <History size={20} className="group-hover:animate-pulse" />
+              <span className="text-sm md:text-base">Riwayat Booking</span>
+            </div>
+          </button>
+        </div>
       </div>
+
+      {/* Booking History Modal */}
+      <BookingHistory 
+        isOpen={showBookingHistory} 
+        onClose={() => setShowBookingHistory(false)} 
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+      />
     </div>
   )
 }

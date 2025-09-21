@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import ThemeToggle from '../components/ThemeToggle'
+import Toast from '../components/Toast'
 
 interface Court {
   name: string
@@ -27,6 +29,7 @@ export default function AdminPage() {
   const [newCourt, setNewCourt] = useState<Court>({ name: '', location: '', pricePerHour: 0 })
   const [newShuttlecock, setNewShuttlecock] = useState<Shuttlecock>({ name: '', pricePerPiece: 0 })
   const [newBank, setNewBank] = useState('')
+  const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error', isVisible: false })
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -48,13 +51,19 @@ export default function AdminPage() {
     }
   }, [isLoggedIn])
 
-  const handleLogin = () => {
+  const handleLogin = (e?: React.FormEvent) => {
+    e?.preventDefault()
     if (loginForm.username === 'adminpbkm' && loginForm.password === 'adminpbkm1010') {
       setIsLoggedIn(true)
       setShowLogin(false)
+      showToast('Login berhasil! Selamat datang Admin.', 'success')
     } else {
-      alert('Username atau password salah!')
+      showToast('Username atau password salah!', 'error')
     }
+  }
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type, isVisible: true })
   }
 
   const addCourt = () => {
@@ -63,6 +72,9 @@ export default function AdminPage() {
       setCourts(updatedCourts)
       saveCourts(updatedCourts)
       setNewCourt({ name: '', location: '', pricePerHour: 0 })
+      showToast('Lapangan berhasil ditambahkan!', 'success')
+    } else {
+      showToast('Mohon lengkapi semua data lapangan!', 'error')
     }
   }
 
@@ -72,6 +84,7 @@ export default function AdminPage() {
       setCourts(updatedCourts)
       saveCourts(updatedCourts)
       setEditingCourt(null)
+      showToast('Lapangan berhasil diperbarui!', 'success')
     }
   }
 
@@ -79,6 +92,7 @@ export default function AdminPage() {
     const updatedCourts = courts.filter(c => c.name !== name)
     setCourts(updatedCourts)
     saveCourts(updatedCourts)
+    showToast('Lapangan berhasil dihapus!', 'success')
   }
 
   const saveCourts = (courtsData: any[]) => {
@@ -95,6 +109,9 @@ export default function AdminPage() {
       setShuttlecocks(updatedShuttlecocks)
       saveShuttlecocks(updatedShuttlecocks)
       setNewShuttlecock({ name: '', pricePerPiece: 0 })
+      showToast('Shuttlecock berhasil ditambahkan!', 'success')
+    } else {
+      showToast('Mohon lengkapi semua data shuttlecock!', 'error')
     }
   }
 
@@ -104,6 +121,7 @@ export default function AdminPage() {
       setShuttlecocks(updatedShuttlecocks)
       saveShuttlecocks(updatedShuttlecocks)
       setEditingShuttlecock(null)
+      showToast('Shuttlecock berhasil diperbarui!', 'success')
     }
   }
 
@@ -111,6 +129,7 @@ export default function AdminPage() {
     const updatedShuttlecocks = shuttlecocks.filter(s => s.name !== name)
     setShuttlecocks(updatedShuttlecocks)
     saveShuttlecocks(updatedShuttlecocks)
+    showToast('Shuttlecock berhasil dihapus!', 'success')
   }
 
   const saveShuttlecocks = (shuttlecocksData: any[]) => {
@@ -136,12 +155,20 @@ export default function AdminPage() {
       setBankOptions(updatedBanks)
       setNewBank('')
       
-      // Save to server
-      await fetch('/api/banks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedBanks)
-      })
+      try {
+        await fetch('/api/banks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedBanks)
+        })
+        showToast('Bank berhasil ditambahkan!', 'success')
+      } catch (error) {
+        showToast('Gagal menyimpan data bank!', 'error')
+      }
+    } else if (bankOptions.includes(newBank)) {
+      showToast('Bank sudah ada dalam daftar!', 'error')
+    } else {
+      showToast('Mohon masukkan nama bank!', 'error')
     }
   }
 
@@ -149,28 +176,35 @@ export default function AdminPage() {
     const updatedBanks = bankOptions.filter(b => b !== bank)
     setBankOptions(updatedBanks)
     
-    // Save to server
-    await fetch('/api/banks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedBanks)
-    })
+    try {
+      await fetch('/api/banks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedBanks)
+      })
+      showToast('Bank berhasil dihapus!', 'success')
+    } catch (error) {
+      showToast('Gagal menghapus data bank!', 'error')
+    }
   }
 
   if (showLogin) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white border-2 rounded-xl p-8 shadow-lg" style={{ 
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
+        <div className="bg-white dark:bg-gray-800 border-2 rounded-xl p-8 shadow-lg" style={{ 
           borderColor: '#66B933'
         }}>
-          <h2 className="text-2xl font-black mb-6 text-gray-800 text-center">🔐 ADMIN LOGIN</h2>
-          <div className="space-y-4">
+          <h2 className="text-2xl font-black mb-6 text-gray-800 dark:text-gray-200 text-center">🔐 ADMIN LOGIN</h2>
+          <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="text"
               placeholder="Username"
               value={loginForm.username}
               onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               style={{ borderColor: '#66B933' }}
             />
             <input
@@ -178,34 +212,38 @@ export default function AdminPage() {
               placeholder="Password"
               value={loginForm.password}
               onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               style={{ borderColor: '#66B933' }}
             />
             <div className="flex gap-2">
               <button
-                onClick={handleLogin}
+                type="submit"
                 className="px-4 py-2 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200"
                 style={{ backgroundColor: '#66B933' }}
               >
                 Login
               </button>
               <button
+                type="button"
                 onClick={() => router.push('/')}
                 className="px-4 py-2 bg-black text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200"
               >
                 Kembali
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6 overflow-hidden">
           {/* Header */}
           <div className="text-white p-3 md:p-6" style={{ 
             background: 'linear-gradient(135deg, #66B933 0%, #4a9025 100%)',
@@ -240,18 +278,18 @@ export default function AdminPage() {
           <div className="p-6 space-y-8">
             {/* Manage Courts */}
             <div>
-              <h3 className="font-bold mb-4 text-black">🏟️ Kelola Lapangan</h3>
+              <h3 className="font-bold mb-4 text-black dark:text-white">🏟️ Kelola Lapangan</h3>
               
               {/* Add New Court */}
-              <div className="bg-gray-50 p-4 border rounded-lg mb-4" style={{ borderColor: '#66B933' }}>
-                <h4 className="font-bold mb-2 text-gray-800">Tambah Lapangan Baru</h4>
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 border rounded-lg mb-4" style={{ borderColor: '#66B933' }}>
+                <h4 className="font-bold mb-2 text-gray-800 dark:text-gray-200">Tambah Lapangan Baru</h4>
                 <div className="grid md:grid-cols-3 gap-2 mb-2">
                   <input
                     type="text"
                     placeholder="Nama Lapangan"
                     value={newCourt.name}
                     onChange={(e) => setNewCourt({...newCourt, name: e.target.value})}
-                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     style={{ borderColor: '#66B933' }}
                   />
                   <input
@@ -259,7 +297,7 @@ export default function AdminPage() {
                     placeholder="Lokasi"
                     value={newCourt.location}
                     onChange={(e) => setNewCourt({...newCourt, location: e.target.value})}
-                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     style={{ borderColor: '#66B933' }}
                   />
                   <input
@@ -267,7 +305,7 @@ export default function AdminPage() {
                     placeholder="Harga per Jam"
                     value={newCourt.pricePerHour || ''}
                     onChange={(e) => setNewCourt({...newCourt, pricePerHour: parseInt(e.target.value) || 0})}
-                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     style={{ borderColor: '#66B933' }}
                   />
                 </div>
@@ -283,33 +321,33 @@ export default function AdminPage() {
               {/* Courts List */}
               <div className="space-y-2">
                 {courts.map((court, index) => (
-                  <div key={index} className="bg-white p-4 border rounded-lg shadow-sm flex items-center justify-between" style={{ borderColor: '#66B933' }}>
+                  <div key={index} className="bg-white dark:bg-gray-600 p-4 border rounded-lg shadow-sm flex items-center justify-between" style={{ borderColor: '#66B933' }}>
                     {editingCourt?.name === court.name ? (
                       <div className="flex-1 grid md:grid-cols-3 gap-2 mr-2">
                         <input
                           type="text"
                           value={editingCourt.name}
                           onChange={(e) => setEditingCourt({...editingCourt, name: e.target.value})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent"
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           style={{ borderColor: '#66B933' }}
                         />
                         <input
                           type="text"
                           value={editingCourt.location}
                           onChange={(e) => setEditingCourt({...editingCourt, location: e.target.value})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent"
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           style={{ borderColor: '#66B933' }}
                         />
                         <input
                           type="number"
                           value={editingCourt.pricePerHour}
                           onChange={(e) => setEditingCourt({...editingCourt, pricePerHour: parseInt(e.target.value) || 0})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent"
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           style={{ borderColor: '#66B933' }}
                         />
                       </div>
                     ) : (
-                      <div className="flex-1 text-black">
+                      <div className="flex-1 text-black dark:text-white">
                         <strong>{court.name}</strong> - {court.location} - Rp {court.pricePerHour.toLocaleString()}/jam
                       </div>
                     )}
@@ -355,18 +393,18 @@ export default function AdminPage() {
 
             {/* Manage Shuttlecocks */}
             <div>
-              <h3 className="font-bold mb-4 text-black">🏸 Kelola Shuttlecock</h3>
+              <h3 className="font-bold mb-4 text-black dark:text-white">🏸 Kelola Shuttlecock</h3>
               
               {/* Add New Shuttlecock */}
-              <div className="bg-gray-50 p-4 border rounded-lg mb-4" style={{ borderColor: '#66B933' }}>
-                <h4 className="font-bold mb-2 text-gray-800">Tambah Shuttlecock Baru</h4>
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 border rounded-lg mb-4" style={{ borderColor: '#66B933' }}>
+                <h4 className="font-bold mb-2 text-gray-800 dark:text-gray-200">Tambah Shuttlecock Baru</h4>
                 <div className="grid md:grid-cols-2 gap-2 mb-2">
                   <input
                     type="text"
                     placeholder="Nama Shuttlecock"
                     value={newShuttlecock.name}
                     onChange={(e) => setNewShuttlecock({...newShuttlecock, name: e.target.value})}
-                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     style={{ borderColor: '#66B933' }}
                   />
                   <input
@@ -374,7 +412,7 @@ export default function AdminPage() {
                     placeholder="Harga per Biji"
                     value={newShuttlecock.pricePerPiece || ''}
                     onChange={(e) => setNewShuttlecock({...newShuttlecock, pricePerPiece: parseInt(e.target.value) || 0})}
-                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     style={{ borderColor: '#66B933' }}
                   />
                 </div>
@@ -390,26 +428,26 @@ export default function AdminPage() {
               {/* Shuttlecocks List */}
               <div className="space-y-2">
                 {shuttlecocks.map((shuttlecock, index) => (
-                  <div key={index} className="bg-white p-4 border rounded-lg shadow-sm flex items-center justify-between" style={{ borderColor: '#66B933' }}>
+                  <div key={index} className="bg-white dark:bg-gray-600 p-4 border rounded-lg shadow-sm flex items-center justify-between" style={{ borderColor: '#66B933' }}>
                     {editingShuttlecock?.name === shuttlecock.name ? (
                       <div className="flex-1 grid md:grid-cols-2 gap-2 mr-2">
                         <input
                           type="text"
                           value={editingShuttlecock.name}
                           onChange={(e) => setEditingShuttlecock({...editingShuttlecock, name: e.target.value})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent"
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           style={{ borderColor: '#66B933' }}
                         />
                         <input
                           type="number"
                           value={editingShuttlecock.pricePerPiece}
                           onChange={(e) => setEditingShuttlecock({...editingShuttlecock, pricePerPiece: parseInt(e.target.value) || 0})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent"
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           style={{ borderColor: '#66B933' }}
                         />
                       </div>
                     ) : (
-                      <div className="flex-1 text-black">
+                      <div className="flex-1 text-black dark:text-white">
                         <strong>{shuttlecock.name}</strong> - Rp {shuttlecock.pricePerPiece.toLocaleString()}/biji
                       </div>
                     )}
@@ -455,17 +493,17 @@ export default function AdminPage() {
 
             {/* Manage Banks */}
             <div>
-              <h3 className="font-bold mb-4 text-black">🏦 Kelola Bank</h3>
+              <h3 className="font-bold mb-4 text-black dark:text-white">🏦 Kelola Bank</h3>
               
               {/* Add New Bank */}
-              <div className="bg-gray-50 p-4 border rounded-lg mb-4" style={{ borderColor: '#66B933' }}>
-                <h4 className="font-bold mb-2 text-gray-800">Tambah Bank Baru</h4>
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 border rounded-lg mb-4" style={{ borderColor: '#66B933' }}>
+                <h4 className="font-bold mb-2 text-gray-800 dark:text-gray-200">Tambah Bank Baru</h4>
                 <input
                   type="text"
                   placeholder="Nama Bank"
                   value={newBank}
                   onChange={(e) => setNewBank(e.target.value)}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent mb-3"
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent mb-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   style={{ borderColor: '#66B933' }}
                 />
                 <button
@@ -480,8 +518,8 @@ export default function AdminPage() {
               {/* Banks List */}
               <div className="grid md:grid-cols-3 gap-2">
                 {bankOptions.map((bank, index) => (
-                  <div key={index} className="bg-white p-4 border rounded-lg shadow-sm flex items-center justify-between" style={{ borderColor: '#66B933' }}>
-                    <span className="text-black font-medium">{bank}</span>
+                  <div key={index} className="bg-white dark:bg-gray-600 p-4 border rounded-lg shadow-sm flex items-center justify-between" style={{ borderColor: '#66B933' }}>
+                    <span className="text-black dark:text-white font-medium">{bank}</span>
                     <button
                       onClick={() => deleteBank(bank)}
                       className="px-2 py-1 bg-black text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200"
@@ -495,6 +533,14 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+      />
     </div>
   )
 }
