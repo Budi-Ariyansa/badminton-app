@@ -109,31 +109,31 @@ export default function BookingHistory({ isOpen, onClose }: BookingHistoryProps)
                       <div className="grid md:grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
-                          <span>{booking.court_name || booking.courtName || 'Unknown'} - {booking.court_location || booking.courtLocation || 'Unknown'}</span>
+                          <span>{(booking as any).courtName || 'Unknown'} - {(booking as any).courtLocation || 'Unknown'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4" />
-                          <span>{booking.player_count || booking.playerCount || 0} pemain</span>
+                          <span>{(booking as any).playerCount || 0} pemain</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4" />
-                          <span>{booking.duration || 0} jam</span>
+                          <span>{(booking as any).duration || 0} jam</span>
                         </div>
                         <div>
-                          <span>🏸 {booking.shuttlecock_name || booking.shuttlecockName || 'Unknown'} ({booking.shuttlecock_count || booking.shuttlecockCount || 0} biji)</span>
+                          <span>🏸 {(booking as any).shuttlecockName || 'Unknown'} ({(booking as any).shuttlecockCount || 0} biji)</span>
                         </div>
                       </div>
                     </div>
                     
                     <div className="text-right">
                       <div className="text-lg font-bold text-green-600">
-                        Rp {(booking.cost_per_person || booking.costPerPerson || 0).toLocaleString()}
+                        Rp {((booking as any).costPerPerson || 0).toLocaleString()}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         per orang
                       </div>
                       <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        Total: Rp {(booking.total_cost || booking.totalCost || 0).toLocaleString()}
+                        Total: Rp {((booking as any).totalCost || 0).toLocaleString()}
                       </div>
                     </div>
                   </div>
