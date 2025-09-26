@@ -1,6 +1,10 @@
 .next/
 node_modules/
 
-# SQLite database
+# Environment variables
+.env.local
+.env
+
+# SQLite database (legacy)
 /data/*.db
 /data/*.db-journal

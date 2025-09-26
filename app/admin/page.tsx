@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import ThemeToggle from '../components/ThemeToggle'
 import Toast from '../components/Toast'
+import Loading from '../components/Loading'
 
 interface Court {
   name: string
   location: string
-  pricePerHour: number
+  priceperhour: number
 }
 
 interface Shuttlecock {
   name: string
-  pricePerPiece: number
+  priceperpiece: number
 }
 
 export default function AdminPage() {
@@ -26,28 +27,36 @@ export default function AdminPage() {
   const [bankOptions, setBankOptions] = useState<string[]>([])
   const [editingCourt, setEditingCourt] = useState<Court | null>(null)
   const [editingShuttlecock, setEditingShuttlecock] = useState<Shuttlecock | null>(null)
-  const [newCourt, setNewCourt] = useState<Court>({ name: '', location: '', pricePerHour: 0 })
-  const [newShuttlecock, setNewShuttlecock] = useState<Shuttlecock>({ name: '', pricePerPiece: 0 })
+  const [newCourt, setNewCourt] = useState<Court>({ name: '', location: '', priceperhour: 0 })
+  const [newShuttlecock, setNewShuttlecock] = useState<Shuttlecock>({ name: '', priceperpiece: 0 })
   const [newBank, setNewBank] = useState('')
   const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error', isVisible: false })
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadingStates, setLoadingStates] = useState({
+    addCourt: false,
+    editCourt: false,
+    deleteCourt: false,
+    addShuttlecock: false,
+    editShuttlecock: false,
+    deleteShuttlecock: false,
+    addBank: false,
+    deleteBank: false
+  })
 
   useEffect(() => {
     if (isLoggedIn) {
+      setIsLoading(true)
       // Load data from API endpoints
-      fetch('/api/courts')
-        .then(res => res.json())
-        .then(data => setCourts(data))
-        .catch(() => setCourts([]))
-
-      fetch('/api/shuttlecocks')
-        .then(res => res.json())
-        .then(data => setShuttlecocks(data))
-        .catch(() => setShuttlecocks([]))
-
-      fetch('/api/banks')
-        .then(res => res.json())
-        .then(data => setBankOptions(data))
-        .catch(() => setBankOptions([]))
+      Promise.all([
+        fetch('/api/courts').then(res => res.json()).catch(() => []),
+        fetch('/api/shuttlecocks').then(res => res.json()).catch(() => []),
+        fetch('/api/banks').then(res => res.json()).catch(() => [])
+      ]).then(([courtsData, shuttlecocksData, banksData]) => {
+        setCourts(courtsData)
+        setShuttlecocks(shuttlecocksData)
+        setBankOptions(banksData)
+        setIsLoading(false)
+      })
     }
   }, [isLoggedIn])
 
@@ -67,12 +76,19 @@ export default function AdminPage() {
   }
 
   const addCourt = async () => {
-    if (newCourt.name && newCourt.location && newCourt.pricePerHour > 0) {
-      const updatedCourts = [...courts, newCourt]
-      setCourts(updatedCourts)
-      await saveCourts(updatedCourts)
-      setNewCourt({ name: '', location: '', pricePerHour: 0 })
-      showToast('Lapangan berhasil ditambahkan!', 'success')
+    if (newCourt.name && newCourt.location && newCourt.priceperhour > 0) {
+      setLoadingStates(prev => ({ ...prev, addCourt: true }))
+      try {
+        const updatedCourts = [...courts, newCourt]
+        setCourts(updatedCourts)
+        await saveCourts(updatedCourts)
+        setNewCourt({ name: '', location: '', priceperhour: 0 })
+        showToast('Lapangan berhasil ditambahkan!', 'success')
+      } catch (error) {
+        showToast('Gagal menambahkan lapangan!', 'error')
+      } finally {
+        setLoadingStates(prev => ({ ...prev, addCourt: false }))
+      }
     } else {
       showToast('Mohon lengkapi semua data lapangan!', 'error')
     }
@@ -80,19 +96,33 @@ export default function AdminPage() {
 
   const updateCourt = async () => {
     if (editingCourt) {
-      const updatedCourts = courts.map(c => c.name === editingCourt.name ? editingCourt : c)
-      setCourts(updatedCourts)
-      await saveCourts(updatedCourts)
-      setEditingCourt(null)
-      showToast('Lapangan berhasil diperbarui!', 'success')
+      setLoadingStates(prev => ({ ...prev, editCourt: true }))
+      try {
+        const updatedCourts = courts.map(c => c.name === editingCourt.name ? editingCourt : c)
+        setCourts(updatedCourts)
+        await saveCourts(updatedCourts)
+        setEditingCourt(null)
+        showToast('Lapangan berhasil diperbarui!', 'success')
+      } catch (error) {
+        showToast('Gagal memperbarui lapangan!', 'error')
+      } finally {
+        setLoadingStates(prev => ({ ...prev, editCourt: false }))
+      }
     }
   }
 
   const deleteCourt = async (name: string) => {
-    const updatedCourts = courts.filter(c => c.name !== name)
-    setCourts(updatedCourts)
-    await saveCourts(updatedCourts)
-    showToast('Lapangan berhasil dihapus!', 'success')
+    setLoadingStates(prev => ({ ...prev, deleteCourt: true }))
+    try {
+      const updatedCourts = courts.filter(c => c.name !== name)
+      setCourts(updatedCourts)
+      await saveCourts(updatedCourts)
+      showToast('Lapangan berhasil dihapus!', 'success')
+    } catch (error) {
+      showToast('Gagal menghapus lapangan!', 'error')
+    } finally {
+      setLoadingStates(prev => ({ ...prev, deleteCourt: false }))
+    }
   }
 
   const saveCourts = async (courtsData: any[]) => {
@@ -113,12 +143,19 @@ export default function AdminPage() {
   }
 
   const addShuttlecock = async () => {
-    if (newShuttlecock.name && newShuttlecock.pricePerPiece > 0) {
-      const updatedShuttlecocks = [...shuttlecocks, newShuttlecock]
-      setShuttlecocks(updatedShuttlecocks)
-      await saveShuttlecocks(updatedShuttlecocks)
-      setNewShuttlecock({ name: '', pricePerPiece: 0 })
-      showToast('Shuttlecock berhasil ditambahkan!', 'success')
+    if (newShuttlecock.name && newShuttlecock.priceperpiece > 0) {
+      setLoadingStates(prev => ({ ...prev, addShuttlecock: true }))
+      try {
+        const updatedShuttlecocks = [...shuttlecocks, newShuttlecock]
+        setShuttlecocks(updatedShuttlecocks)
+        await saveShuttlecocks(updatedShuttlecocks)
+        setNewShuttlecock({ name: '', priceperpiece: 0 })
+        showToast('Shuttlecock berhasil ditambahkan!', 'success')
+      } catch (error) {
+        showToast('Gagal menambahkan shuttlecock!', 'error')
+      } finally {
+        setLoadingStates(prev => ({ ...prev, addShuttlecock: false }))
+      }
     } else {
       showToast('Mohon lengkapi semua data shuttlecock!', 'error')
     }
@@ -126,19 +163,33 @@ export default function AdminPage() {
 
   const updateShuttlecock = async () => {
     if (editingShuttlecock) {
-      const updatedShuttlecocks = shuttlecocks.map(s => s.name === editingShuttlecock.name ? editingShuttlecock : s)
-      setShuttlecocks(updatedShuttlecocks)
-      await saveShuttlecocks(updatedShuttlecocks)
-      setEditingShuttlecock(null)
-      showToast('Shuttlecock berhasil diperbarui!', 'success')
+      setLoadingStates(prev => ({ ...prev, editShuttlecock: true }))
+      try {
+        const updatedShuttlecocks = shuttlecocks.map(s => s.name === editingShuttlecock.name ? editingShuttlecock : s)
+        setShuttlecocks(updatedShuttlecocks)
+        await saveShuttlecocks(updatedShuttlecocks)
+        setEditingShuttlecock(null)
+        showToast('Shuttlecock berhasil diperbarui!', 'success')
+      } catch (error) {
+        showToast('Gagal memperbarui shuttlecock!', 'error')
+      } finally {
+        setLoadingStates(prev => ({ ...prev, editShuttlecock: false }))
+      }
     }
   }
 
   const deleteShuttlecock = async (name: string) => {
-    const updatedShuttlecocks = shuttlecocks.filter(s => s.name !== name)
-    setShuttlecocks(updatedShuttlecocks)
-    await saveShuttlecocks(updatedShuttlecocks)
-    showToast('Shuttlecock berhasil dihapus!', 'success')
+    setLoadingStates(prev => ({ ...prev, deleteShuttlecock: true }))
+    try {
+      const updatedShuttlecocks = shuttlecocks.filter(s => s.name !== name)
+      setShuttlecocks(updatedShuttlecocks)
+      await saveShuttlecocks(updatedShuttlecocks)
+      showToast('Shuttlecock berhasil dihapus!', 'success')
+    } catch (error) {
+      showToast('Gagal menghapus shuttlecock!', 'error')
+    } finally {
+      setLoadingStates(prev => ({ ...prev, deleteShuttlecock: false }))
+    }
   }
 
   const saveShuttlecocks = async (shuttlecocksData: any[]) => {
@@ -169,11 +220,12 @@ export default function AdminPage() {
 
   const addBank = async () => {
     if (newBank && !bankOptions.includes(newBank)) {
-      const updatedBanks = [...bankOptions, newBank]
-      setBankOptions(updatedBanks)
-      setNewBank('')
-      
+      setLoadingStates(prev => ({ ...prev, addBank: true }))
       try {
+        const updatedBanks = [...bankOptions, newBank]
+        setBankOptions(updatedBanks)
+        setNewBank('')
+        
         await fetch('/api/banks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -182,6 +234,8 @@ export default function AdminPage() {
         showToast('Bank berhasil ditambahkan!', 'success')
       } catch (error) {
         showToast('Gagal menyimpan data bank!', 'error')
+      } finally {
+        setLoadingStates(prev => ({ ...prev, addBank: false }))
       }
     } else if (bankOptions.includes(newBank)) {
       showToast('Bank sudah ada dalam daftar!', 'error')
@@ -191,10 +245,11 @@ export default function AdminPage() {
   }
 
   const deleteBank = async (bank: string) => {
-    const updatedBanks = bankOptions.filter(b => b !== bank)
-    setBankOptions(updatedBanks)
-    
+    setLoadingStates(prev => ({ ...prev, deleteBank: true }))
     try {
+      const updatedBanks = bankOptions.filter(b => b !== bank)
+      setBankOptions(updatedBanks)
+      
       await fetch('/api/banks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -203,6 +258,8 @@ export default function AdminPage() {
       showToast('Bank berhasil dihapus!', 'success')
     } catch (error) {
       showToast('Gagal menghapus data bank!', 'error')
+    } finally {
+      setLoadingStates(prev => ({ ...prev, deleteBank: false }))
     }
   }
 
@@ -261,6 +318,11 @@ export default function AdminPage() {
         <ThemeToggle />
       </div>
       <div className="max-w-6xl mx-auto">
+        {isLoading ? (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+            <Loading message="Memuat data admin..." />
+          </div>
+        ) : (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6 overflow-hidden">
           {/* Header */}
           <div className="text-white p-3 md:p-6" style={{ 
@@ -321,18 +383,19 @@ export default function AdminPage() {
                   <input
                     type="number"
                     placeholder="Harga per Jam"
-                    value={newCourt.pricePerHour || ''}
-                    onChange={(e) => setNewCourt({...newCourt, pricePerHour: parseInt(e.target.value) || 0})}
+                    value={newCourt.priceperhour || ''}
+                    onChange={(e) => setNewCourt({...newCourt, priceperhour: parseInt(e.target.value) || 0})}
                     className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     style={{ borderColor: '#66B933' }}
                   />
                 </div>
                 <button
                   onClick={addCourt}
-                  className="w-full px-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200"
+                  disabled={loadingStates.addCourt}
+                  className="w-full px-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200 disabled:opacity-50"
                   style={{ backgroundColor: '#66B933' }}
                 >
-                  Tambah
+                  {loadingStates.addCourt ? 'Menambahkan...' : 'Tambah'}
                 </button>
               </div>
 
@@ -346,27 +409,30 @@ export default function AdminPage() {
                           type="text"
                           value={editingCourt.name}
                           onChange={(e) => setEditingCourt({...editingCourt, name: e.target.value})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          disabled={loadingStates.editCourt}
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{ borderColor: '#66B933' }}
                         />
                         <input
                           type="text"
                           value={editingCourt.location}
                           onChange={(e) => setEditingCourt({...editingCourt, location: e.target.value})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          disabled={loadingStates.editCourt}
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{ borderColor: '#66B933' }}
                         />
                         <input
                           type="number"
-                          value={editingCourt.pricePerHour}
-                          onChange={(e) => setEditingCourt({...editingCourt, pricePerHour: parseInt(e.target.value) || 0})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          value={editingCourt.priceperhour}
+                          onChange={(e) => setEditingCourt({...editingCourt, priceperhour: parseInt(e.target.value) || 0})}
+                          disabled={loadingStates.editCourt}
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{ borderColor: '#66B933' }}
                         />
                       </div>
                     ) : (
                       <div className="flex-1 text-black dark:text-white">
-                        <strong>{court.name}</strong> - {court.location} - Rp {court.pricePerHour.toLocaleString()}/jam
+                        <strong>{court.name}</strong> - {court.location} - Rp {(court.priceperhour || 0).toLocaleString()}/jam
                       </div>
                     )}
                     <div className="flex gap-1">
@@ -374,10 +440,11 @@ export default function AdminPage() {
                         <>
                           <button
                             onClick={updateCourt}
-                            className="px-2 py-1 text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200"
+                            disabled={loadingStates.editCourt}
+                            className="px-2 py-1 text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200 disabled:opacity-50"
                             style={{ backgroundColor: '#66B933' }}
                           >
-                            Simpan
+                            {loadingStates.editCourt ? 'Menyimpan...' : 'Simpan'}
                           </button>
                           <button
                             onClick={() => setEditingCourt(null)}
@@ -397,9 +464,10 @@ export default function AdminPage() {
                           </button>
                           <button
                             onClick={() => deleteCourt(court.name)}
-                            className="px-2 py-1 bg-black text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200"
+                            disabled={loadingStates.deleteCourt}
+                            className="px-2 py-1 bg-black text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200 disabled:opacity-50"
                           >
-                            Hapus
+                            {loadingStates.deleteCourt ? 'Menghapus...' : 'Hapus'}
                           </button>
                         </>
                       )}
@@ -428,18 +496,19 @@ export default function AdminPage() {
                   <input
                     type="number"
                     placeholder="Harga per Biji"
-                    value={newShuttlecock.pricePerPiece || ''}
-                    onChange={(e) => setNewShuttlecock({...newShuttlecock, pricePerPiece: parseInt(e.target.value) || 0})}
+                    value={newShuttlecock.priceperpiece || ''}
+                    onChange={(e) => setNewShuttlecock({...newShuttlecock, priceperpiece: parseInt(e.target.value) || 0})}
                     className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     style={{ borderColor: '#66B933' }}
                   />
                 </div>
                 <button
                   onClick={addShuttlecock}
-                  className="w-full px-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200"
+                  disabled={loadingStates.addShuttlecock}
+                  className="w-full px-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200 disabled:opacity-50"
                   style={{ backgroundColor: '#66B933' }}
                 >
-                  Tambah
+                  {loadingStates.addShuttlecock ? 'Menambahkan...' : 'Tambah'}
                 </button>
               </div>
 
@@ -453,20 +522,22 @@ export default function AdminPage() {
                           type="text"
                           value={editingShuttlecock.name}
                           onChange={(e) => setEditingShuttlecock({...editingShuttlecock, name: e.target.value})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          disabled={loadingStates.editShuttlecock}
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{ borderColor: '#66B933' }}
                         />
                         <input
                           type="number"
-                          value={editingShuttlecock.pricePerPiece}
-                          onChange={(e) => setEditingShuttlecock({...editingShuttlecock, pricePerPiece: parseInt(e.target.value) || 0})}
-                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          value={editingShuttlecock.priceperpiece}
+                          onChange={(e) => setEditingShuttlecock({...editingShuttlecock, priceperpiece: parseInt(e.target.value) || 0})}
+                          disabled={loadingStates.editShuttlecock}
+                          className="p-2 border rounded focus:outline-none focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{ borderColor: '#66B933' }}
                         />
                       </div>
                     ) : (
                       <div className="flex-1 text-black dark:text-white">
-                        <strong>{shuttlecock.name}</strong> - Rp {shuttlecock.pricePerPiece.toLocaleString()}/biji
+                        <strong>{shuttlecock.name}</strong> - Rp {(shuttlecock.priceperpiece || 0).toLocaleString()}/biji
                       </div>
                     )}
                     <div className="flex gap-1">
@@ -474,10 +545,11 @@ export default function AdminPage() {
                         <>
                           <button
                             onClick={updateShuttlecock}
-                            className="px-2 py-1 text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200"
+                            disabled={loadingStates.editShuttlecock}
+                            className="px-2 py-1 text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200 disabled:opacity-50"
                             style={{ backgroundColor: '#66B933' }}
                           >
-                            Simpan
+                            {loadingStates.editShuttlecock ? 'Menyimpan...' : 'Simpan'}
                           </button>
                           <button
                             onClick={() => setEditingShuttlecock(null)}
@@ -497,9 +569,10 @@ export default function AdminPage() {
                           </button>
                           <button
                             onClick={() => deleteShuttlecock(shuttlecock.name)}
-                            className="px-2 py-1 bg-black text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200"
+                            disabled={loadingStates.deleteShuttlecock}
+                            className="px-2 py-1 bg-black text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200 disabled:opacity-50"
                           >
-                            Hapus
+                            {loadingStates.deleteShuttlecock ? 'Menghapus...' : 'Hapus'}
                           </button>
                         </>
                       )}
@@ -526,10 +599,11 @@ export default function AdminPage() {
                 />
                 <button
                   onClick={addBank}
-                  className="w-full px-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200"
+                  disabled={loadingStates.addBank}
+                  className="w-full px-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-opacity duration-200 disabled:opacity-50"
                   style={{ backgroundColor: '#66B933' }}
                 >
-                  Tambah
+                  {loadingStates.addBank ? 'Menambahkan...' : 'Tambah'}
                 </button>
               </div>
 
@@ -540,9 +614,10 @@ export default function AdminPage() {
                     <span className="text-black dark:text-white font-medium">{bank}</span>
                     <button
                       onClick={() => deleteBank(bank)}
-                      className="px-2 py-1 bg-black text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200"
+                      disabled={loadingStates.deleteBank}
+                      className="px-2 py-1 bg-black text-white font-bold rounded text-xs hover:opacity-90 transition-opacity duration-200 disabled:opacity-50"
                     >
-                      Hapus
+                      {loadingStates.deleteBank ? 'Menghapus...' : 'Hapus'}
                     </button>
                   </div>
                 ))}
@@ -550,6 +625,7 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* Toast Notification */}

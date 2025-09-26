@@ -14,7 +14,7 @@ Aplikasi perhitungan biaya badminton per orang dengan fitur lengkap sesuai spesi
 - ✅ Import invoice dari JSON
 - ✅ Share langsung ke WhatsApp
 - ✅ Responsive design untuk desktop dan mobile
-- ✅ SQLite database untuk penyimpanan data
+- ✅ PostgreSQL database untuk penyimpanan data
 
 ## Cara Menjalankan
 
@@ -49,20 +49,20 @@ vercel
 
 ## Database
 
-Aplikasi menggunakan SQLite database untuk menyimpan:
+Aplikasi menggunakan PostgreSQL database untuk menyimpan:
 - Data lapangan (courts)
 - Data shuttlecock (shuttlecocks)
 - Data bank (banks)
 - Riwayat booking (bookings)
 
-Database akan dibuat otomatis di `/data/badminton.db` saat pertama kali dijalankan.
+Database menggunakan Neon PostgreSQL yang sudah dikonfigurasi untuk production.
 
 ## Struktur Aplikasi
 
 - Responsive design menggunakan Tailwind CSS
 - Next.js 14 dengan App Router
 - TypeScript untuk type safety
-- SQLite database untuk penyimpanan data
+- PostgreSQL database untuk penyimpanan data
 - Export static untuk compatibility dengan Vercel
 
 ## Cara Penggunaan
