@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 const { getDb, initDatabase } = require('../../../lib/database')
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     initDatabase()
     const db = getDb()
     
     return new Promise((resolve) => {
-      db.all("SELECT name FROM banks", (err, rows) => {
+      db.all("SELECT name FROM banks", (err: any, rows: any) => {
         db.close()
         if (err) {
           console.error('GET Banks Error:', err)
@@ -24,7 +24,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const banks = await request.json()
     initDatabase()
