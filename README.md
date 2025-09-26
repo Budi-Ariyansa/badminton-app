@@ -14,6 +14,7 @@ Aplikasi perhitungan biaya badminton per orang dengan fitur lengkap sesuai spesi
 - ✅ Import invoice dari JSON
 - ✅ Share langsung ke WhatsApp
 - ✅ Responsive design untuk desktop dan mobile
+- ✅ SQLite database untuk penyimpanan data
 
 ## Cara Menjalankan
 
@@ -22,12 +23,17 @@ Aplikasi perhitungan biaya badminton per orang dengan fitur lengkap sesuai spesi
    npm install
    ```
 
-2. Jalankan development server:
+2. Initialize database:
+   ```bash
+   npm run init-db
+   ```
+
+3. Jalankan development server:
    ```bash
    npm run dev
    ```
 
-3. Buka [http://localhost:3000](http://localhost:3000)
+4. Buka [http://localhost:3000](http://localhost:3000)
 
 ## Deploy ke Vercel
 
@@ -41,11 +47,22 @@ npm install -g vercel
 vercel
 ```
 
+## Database
+
+Aplikasi menggunakan SQLite database untuk menyimpan:
+- Data lapangan (courts)
+- Data shuttlecock (shuttlecocks)
+- Data bank (banks)
+- Riwayat booking (bookings)
+
+Database akan dibuat otomatis di `/data/badminton.db` saat pertama kali dijalankan.
+
 ## Struktur Aplikasi
 
 - Responsive design menggunakan Tailwind CSS
 - Next.js 14 dengan App Router
 - TypeScript untuk type safety
+- SQLite database untuk penyimpanan data
 - Export static untuk compatibility dengan Vercel
 
 ## Cara Penggunaan
@@ -58,3 +75,14 @@ vercel
 6. Pilih rekening untuk transfer
 7. Lihat perhitungan biaya per orang
 8. Export, import, atau share invoice sesuai kebutuhan
+
+## Admin Panel
+
+Akses admin panel di `/admin` dengan kredensial:
+- Username: `adminpbkm`
+- Password: `adminpbkm1010`
+
+Fitur admin:
+- Kelola data lapangan
+- Kelola data shuttlecock
+- Kelola data bank

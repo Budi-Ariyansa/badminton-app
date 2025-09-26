@@ -66,11 +66,11 @@ export default function AdminPage() {
     setToast({ message, type, isVisible: true })
   }
 
-  const addCourt = () => {
+  const addCourt = async () => {
     if (newCourt.name && newCourt.location && newCourt.pricePerHour > 0) {
       const updatedCourts = [...courts, newCourt]
       setCourts(updatedCourts)
-      saveCourts(updatedCourts)
+      await saveCourts(updatedCourts)
       setNewCourt({ name: '', location: '', pricePerHour: 0 })
       showToast('Lapangan berhasil ditambahkan!', 'success')
     } else {
@@ -78,36 +78,45 @@ export default function AdminPage() {
     }
   }
 
-  const updateCourt = () => {
+  const updateCourt = async () => {
     if (editingCourt) {
       const updatedCourts = courts.map(c => c.name === editingCourt.name ? editingCourt : c)
       setCourts(updatedCourts)
-      saveCourts(updatedCourts)
+      await saveCourts(updatedCourts)
       setEditingCourt(null)
       showToast('Lapangan berhasil diperbarui!', 'success')
     }
   }
 
-  const deleteCourt = (name: string) => {
+  const deleteCourt = async (name: string) => {
     const updatedCourts = courts.filter(c => c.name !== name)
     setCourts(updatedCourts)
-    saveCourts(updatedCourts)
+    await saveCourts(updatedCourts)
     showToast('Lapangan berhasil dihapus!', 'success')
   }
 
-  const saveCourts = (courtsData: any[]) => {
-    fetch('/api/courts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(courtsData)
-    })
+  const saveCourts = async (courtsData: any[]) => {
+    try {
+      const response = await fetch('/api/courts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(courtsData)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save courts')
+      }
+    } catch (error) {
+      console.error('Error saving courts:', error)
+      showToast('Gagal menyimpan data lapangan!', 'error')
+    }
   }
 
-  const addShuttlecock = () => {
+  const addShuttlecock = async () => {
     if (newShuttlecock.name && newShuttlecock.pricePerPiece > 0) {
       const updatedShuttlecocks = [...shuttlecocks, newShuttlecock]
       setShuttlecocks(updatedShuttlecocks)
-      saveShuttlecocks(updatedShuttlecocks)
+      await saveShuttlecocks(updatedShuttlecocks)
       setNewShuttlecock({ name: '', pricePerPiece: 0 })
       showToast('Shuttlecock berhasil ditambahkan!', 'success')
     } else {
@@ -115,29 +124,38 @@ export default function AdminPage() {
     }
   }
 
-  const updateShuttlecock = () => {
+  const updateShuttlecock = async () => {
     if (editingShuttlecock) {
       const updatedShuttlecocks = shuttlecocks.map(s => s.name === editingShuttlecock.name ? editingShuttlecock : s)
       setShuttlecocks(updatedShuttlecocks)
-      saveShuttlecocks(updatedShuttlecocks)
+      await saveShuttlecocks(updatedShuttlecocks)
       setEditingShuttlecock(null)
       showToast('Shuttlecock berhasil diperbarui!', 'success')
     }
   }
 
-  const deleteShuttlecock = (name: string) => {
+  const deleteShuttlecock = async (name: string) => {
     const updatedShuttlecocks = shuttlecocks.filter(s => s.name !== name)
     setShuttlecocks(updatedShuttlecocks)
-    saveShuttlecocks(updatedShuttlecocks)
+    await saveShuttlecocks(updatedShuttlecocks)
     showToast('Shuttlecock berhasil dihapus!', 'success')
   }
 
-  const saveShuttlecocks = (shuttlecocksData: any[]) => {
-    fetch('/api/shuttlecocks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(shuttlecocksData)
-    })
+  const saveShuttlecocks = async (shuttlecocksData: any[]) => {
+    try {
+      const response = await fetch('/api/shuttlecocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(shuttlecocksData)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save shuttlecocks')
+      }
+    } catch (error) {
+      console.error('Error saving shuttlecocks:', error)
+      showToast('Gagal menyimpan data shuttlecock!', 'error')
+    }
   }
 
   // Save functions

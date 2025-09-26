@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Download, Share2, History } from 'lucide-react'
-import courtsData from '../data/courts.json'
-import shuttlecocksData from '../data/shuttlecocks.json'
-import banksData from '../data/banks.json'
 import BookingHistory from './components/BookingHistory'
 import Toast from './components/Toast'
 
@@ -48,10 +45,21 @@ export default function BadmintonCalculator() {
   const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error', isVisible: false })
 
   useEffect(() => {
-    // Load data from imported JSON files
-    setCourts(courtsData)
-    setShuttlecocks(shuttlecocksData)
-    setBankOptions(banksData)
+    // Load data from API endpoints
+    fetch('/api/courts')
+      .then(res => res.json())
+      .then(data => setCourts(data))
+      .catch(() => setCourts([]))
+
+    fetch('/api/shuttlecocks')
+      .then(res => res.json())
+      .then(data => setShuttlecocks(data))
+      .catch(() => setShuttlecocks([]))
+
+    fetch('/api/banks')
+      .then(res => res.json())
+      .then(data => setBankOptions(data))
+      .catch(() => setBankOptions([]))
   }, [])
 
   const formatDateToIndonesian = (dateString: string) => {
