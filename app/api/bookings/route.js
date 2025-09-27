@@ -18,9 +18,9 @@ export async function POST(request) {
     await initDatabase()
     
     const result = await pool.query(`INSERT INTO bookings 
-      (date, courtName, courtLocation, courtPrice, shuttlecockName, shuttlecockPrice, 
-       shuttlecockCount, duration, playerCount, totalCost, costPerPerson, 
-       bankName, bankAccountName, bankAccountNumber) 
+      (date, courtname, courtlocation, courtprice, shuttlecockname, shuttlecockprice, 
+       shuttlecockcount, duration, playercount, totalcost, costperperson, 
+       bankname, bankaccountname, bankaccountnumber) 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`, [
       booking.date,
       booking.courtName,
@@ -41,6 +41,17 @@ export async function POST(request) {
     return NextResponse.json({ success: true, id: result.rows[0].id })
   } catch (error) {
     console.error('POST Bookings Error:', error)
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+}
+
+export async function DELETE() {
+  try {
+    await initDatabase()
+    await pool.query("DELETE FROM bookings")
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('DELETE Bookings Error:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

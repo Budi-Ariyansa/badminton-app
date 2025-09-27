@@ -2,23 +2,24 @@
 
 import { useState, useEffect } from 'react'
 import { History, Calendar, Users, Clock, MapPin } from 'lucide-react'
+import Loading from './Loading'
 
 interface Booking {
   id: number
   date: string
-  court_name: string
-  court_location: string
-  court_price: number
-  shuttlecock_name: string
-  shuttlecock_price: number
-  shuttlecock_count: number
+  courtname: string
+  courtlocation: string
+  courtprice: number
+  shuttlecockname: string
+  shuttlecockprice: number
+  shuttlecockcount: number
   duration: number
-  player_count: number
-  total_cost: number
-  cost_per_person: number
-  bank_name?: string
-  bank_account_name?: string
-  bank_account_number?: string
+  playercount: number
+  totalcost: number
+  costperperson: number
+  bankname?: string
+  bankaccountname?: string
+  bankaccountnumber?: string
   created_at: string
 }
 
@@ -83,8 +84,8 @@ export default function BookingHistory({ isOpen, onClose }: BookingHistoryProps)
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           {loading ? (
-            <div className="text-center py-8">
-              <div className="text-gray-500 dark:text-gray-400">Memuat riwayat...</div>
+            <div className="flex justify-center py-8">
+              <Loading message="Memuat riwayat booking..." />
             </div>
           ) : bookings.length === 0 ? (
             <div className="text-center py-8">
@@ -109,31 +110,31 @@ export default function BookingHistory({ isOpen, onClose }: BookingHistoryProps)
                       <div className="grid md:grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
-                          <span>{(booking as any).courtName || 'Unknown'} - {(booking as any).courtLocation || 'Unknown'}</span>
+                          <span>{booking.courtname} - {booking.courtlocation}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4" />
-                          <span>{(booking as any).playerCount || 0} pemain</span>
+                          <span>{booking.playercount} pemain</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4" />
-                          <span>{(booking as any).duration || 0} jam</span>
+                          <span>{booking.duration} jam</span>
                         </div>
                         <div>
-                          <span>🏸 {(booking as any).shuttlecockName || 'Unknown'} ({(booking as any).shuttlecockCount || 0} biji)</span>
+                          <span>🏸 {booking.shuttlecockname} ({booking.shuttlecockcount} biji)</span>
                         </div>
                       </div>
                     </div>
                     
                     <div className="text-right">
                       <div className="text-lg font-bold text-green-600">
-                        Rp {((booking as any).costPerPerson || 0).toLocaleString()}
+                        Rp {booking.costperperson.toLocaleString()}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         per orang
                       </div>
                       <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        Total: Rp {((booking as any).totalCost || 0).toLocaleString()}
+                        Total: Rp {booking.totalcost.toLocaleString()}
                       </div>
                     </div>
                   </div>

@@ -20,7 +20,8 @@ interface Shuttlecock {
 export default function AdminPage() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [showLogin, setShowLogin] = useState(true)
+  const [showLogin, setShowLogin] = useState(false) // Changed to false initially
+  const [isCheckingSession, setIsCheckingSession] = useState(true) // Add session check state
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
   const [courts, setCourts] = useState<Court[]>([])
   const [shuttlecocks, setShuttlecocks] = useState<Shuttlecock[]>([])
@@ -44,6 +45,27 @@ export default function AdminPage() {
   })
 
   useEffect(() => {
+    // Check for existing session on component mount
+    const adminSession = localStorage.getItem('adminSession')
+    if (adminSession) {
+      const sessionData = JSON.parse(adminSession)
+      const now = new Date().getTime()
+      
+      // Check if session is still valid (24 hours)
+      if (sessionData.expires > now) {
+        setIsLoggedIn(true)
+        setShowLogin(false)
+      } else {
+        localStorage.removeItem('adminSession')
+        setShowLogin(true)
+      }
+    } else {
+      setShowLogin(true)
+    }
+    setIsCheckingSession(false) // Session check completed
+  }, [])
+
+  useEffect(() => {
     if (isLoggedIn) {
       setIsLoading(true)
       // Load data from API endpoints
@@ -63,12 +85,26 @@ export default function AdminPage() {
   const handleLogin = (e?: React.FormEvent) => {
     e?.preventDefault()
     if (loginForm.username === 'adminpbkm' && loginForm.password === 'adminpbkm1010') {
+      // Create session that expires in 24 hours
+      const sessionData = {
+        expires: new Date().getTime() + (24 * 60 * 60 * 1000)
+      }
+      localStorage.setItem('adminSession', JSON.stringify(sessionData))
+      
       setIsLoggedIn(true)
       setShowLogin(false)
       showToast('Login berhasil! Selamat datang Admin.', 'success')
     } else {
       showToast('Username atau password salah!', 'error')
     }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminSession')
+    setIsLoggedIn(false)
+    setShowLogin(true)
+    setIsCheckingSession(false)
+    showToast('Logout berhasil!', 'success')
   }
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -263,6 +299,15 @@ export default function AdminPage() {
     }
   }
 
+  // Show loading while checking session
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <Loading message="Memeriksa sesi admin..." />
+      </div>
+    )
+  }
+
   if (showLogin) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
@@ -341,8 +386,15 @@ export default function AdminPage() {
                 </div>
               </div>
               
-              {/* Back Button */}
-              <div className="flex justify-end">
+              {/* Action Buttons */}
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-red-500 bg-opacity-20 backdrop-blur-sm text-white rounded-lg text-xs md:text-sm font-bold hover:bg-opacity-30 transition-all duration-200"
+                >
+                  <span className="text-xs md:text-sm">🚪</span>
+                  <span>LOGOUT</span>
+                </button>
                 <button
                   onClick={() => router.push('/')}
                   className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-white bg-opacity-20 backdrop-blur-sm text-white rounded-lg text-xs md:text-sm font-bold hover:bg-opacity-30 transition-all duration-200"

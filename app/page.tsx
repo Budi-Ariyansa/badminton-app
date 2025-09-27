@@ -45,6 +45,7 @@ export default function BadmintonCalculator() {
   const [showBookingHistory, setShowBookingHistory] = useState(false)
   const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error', isVisible: false })
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     const loadAllData = async () => {
@@ -112,6 +113,8 @@ export default function BadmintonCalculator() {
       return
     }
 
+    setIsSaving(true)
+    
     const totalCost = (courtPrice * duration) + (shuttlecockPrice * shuttlecockCount)
     const costPerPerson = totalCost / playerCount
 
@@ -119,14 +122,14 @@ export default function BadmintonCalculator() {
       date: playDate,
       courtName: selectedCourt.name,
       courtLocation: selectedCourt.location,
-      courtPrice: courtPrice,
+      courtPrice: Math.round(courtPrice),
       shuttlecockName: selectedShuttlecock.name,
-      shuttlecockPrice: shuttlecockPrice,
+      shuttlecockPrice: Math.round(shuttlecockPrice),
       shuttlecockCount: shuttlecockCount,
       duration: duration,
       playerCount: playerCount,
-      totalCost: totalCost,
-      costPerPerson: costPerPerson,
+      totalCost: Math.round(totalCost),
+      costPerPerson: Math.round(costPerPerson),
       bankName: selectedAccount?.bankName || null,
       bankAccountName: selectedAccount?.accountName || null,
       bankAccountNumber: selectedAccount?.accountNumber || null
@@ -149,6 +152,8 @@ export default function BadmintonCalculator() {
     } catch (error) {
       console.error('Failed to save booking:', error)
       showToast('Terjadi error saat menyimpan booking', 'error')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -812,13 +817,22 @@ A.n: ${account.accountName}`
 
             <button
               onClick={saveBooking}
-              disabled={!selectedCourt || !selectedShuttlecock || !playDate || courtPrice === 0 || shuttlecockPrice === 0}
+              disabled={!selectedCourt || !selectedShuttlecock || !playDate || courtPrice === 0 || shuttlecockPrice === 0 || isSaving}
               className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100"
             >
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
               <div className="relative flex items-center justify-center gap-3">
-                <Download size={22} className="group-hover:animate-bounce" />
-                <span className="text-sm md:text-base">Simpan Booking</span>
+                {isSaving ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm md:text-base">Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={22} className="group-hover:animate-bounce" />
+                    <span className="text-sm md:text-base">Simpan Booking</span>
+                  </>
+                )}
               </div>
             </button>
             
